@@ -626,20 +626,24 @@ ADJNZ_DEST: addr  is dsp8 [addr = dsp8 + (inst_start + 2);] {
 	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
 }
 
-:BM^COND8 bit, addr                is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11 & (dest8_11=8 | dest8_11=9 | dest8_11=10); dsp8; COND8 [addr=(dest8_11+dsp8)/8; bit=(dest8_11+dsp8)-(addr*8);] {
+:BM^COND8 bit, addr                is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11 & (dest8_11=8 | dest8_11=9 | dest8_11=10); dsp8; COND8
+	[addr=(dest8_11+dsp8)/8; bit=(dest8_11+dsp8)-(addr*8);] {
 	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
 }
 
-:BM^COND8  bit, addr[FB]           is FB & op0_7=0x7E & op12_15=0x2 & dest8_11=11; dsp8; COND8 [addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
+:BM^COND8  bit, addr[FB]           is FB & op0_7=0x7E & op12_15=0x2 & dest8_11=11; dsp8; COND8
+	[addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
 	local tmp:2 = FB+addr;
 	macro_bm(COND8:1, bit:1, *[near]:1 tmp);
 }
 
-:BM^COND8 bit, addr                is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11 & (dest8_11=12 | dest8_11=13 | dest8_11=14); dsp16; COND8 [addr=(dest8_11+dsp16)/8; bit=(dest8_11+dsp16)-(addr*8);] {
+:BM^COND8 bit, addr                is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11 & (dest8_11=12 | dest8_11=13 | dest8_11=14); dsp16; COND8
+	[addr=(dest8_11+dsp16)/8; bit=(dest8_11+dsp16)-(addr*8);] {
 	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
 }
 
-:BM^COND8 bit, addr                is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11=15; abs16; COND8 [addr=abs16/8; bit=abs16-(addr*8);] {
+:BM^COND8 bit, addr                is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11=15; abs16; COND8
+	[addr=abs16/8; bit=abs16-(addr*8);] {
 	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
 }
 
