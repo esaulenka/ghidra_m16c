@@ -124,7 +124,6 @@ attach variables [mul8b8_11] [R0L R0H R1L R1H _ _ _ _ _ _ _ _ _ _ _ _];
 attach variables [dest2_2] [R0L R0H];
 attach variables [dest3_r0l_r0h] [R0L R0H];
 attach variables [dest2_a0_a1 dest_a0_a1] [A0 A1];
-#attach variables [dest_a0_a1] [A0 A1];
 attach variables [flg12_14] [Cflg Dflg Zflg Sflg Bflg Oflg Iflg Uflg];
 attach variables [dest12_14] [R0 R1 R2 R3 A0 A1 _ _];
 
@@ -344,26 +343,33 @@ macro macro_adc8(src, dest) {
 }
 
 macro macro_adc16(src, dest) {
+	local s = src;
+	local d = dest;
 	local c:2 = zext(Cflg);
-	Cflg = carry(dest, src) || carry(src+dest, c);
-	Oflg = scarry(dest, src) || scarry(src+dest, c);
-	dest = src+dest+c;
-	Zflg = (dest == 0);
-	Sflg = (dest s< 0);
+	Cflg = carry(d, src) || carry(s + d, c);
+	Oflg = scarry(d, s) || scarry(s + d, c);
+	d = s + d + c;
+	Zflg = (d == 0);
+	Sflg = (d s< 0);
+	dest = d;
 }
 
 macro macro_add(src, dest) {
-	Cflg = carry(dest, src);
-	Oflg = scarry(dest, src);
-	dest = dest+src;
-	Zflg = (dest == 0);
-	Sflg = (dest s< 0);
+	local s = src;
+	local d = dest;
+	Cflg = carry(d, s);
+	Oflg = scarry(d, s);
+	d = d + s;
+	Zflg = (d == 0);
+	Sflg = (d s< 0);
+	dest = d;
 }
 
 macro macro_and (src, dest) {
-	dest = dest & src;
-	Sflg = (dest s< 0);
-	Zflg = (dest == 0);
+	local tmp = dest & src;
+	Sflg = (tmp s< 0);
+	Zflg = (tmp == 0);
+	dest = tmp;
 }
 
 macro macro_bm(cond, bit, dest) {
@@ -376,29 +382,35 @@ macro macro_bm(cond, bit, dest) {
 }
 
 macro macro_cmp(src, dest) {
-	local tmp = dest - src;
-	Cflg = (dest >= src);
-	Zflg = (dest == src);
+	local s = src;
+	local d = dest;
+	local tmp = d - s;
+	Cflg = (d >= s);
+	Zflg = (d == s);
 	Sflg = (tmp s< 0);
-	Oflg = sborrow(dest, src);
+	Oflg = sborrow(d, s);
+	dest = d;
 }
 
 macro macro_mov(src, dest) {
-	dest = src;
-	Sflg = (dest s< 0);
-	Zflg = (dest == 0);
+	local tmp = src;
+	Sflg = (tmp s< 0);
+	Zflg = (tmp == 0);
+	dest = tmp;
 }
 
 macro macro_not(dest) {
-	dest = ~dest;
-	Sflg = (dest s< 0);
-	Zflg = (dest == 0);
+	local tmp = ~dest;
+	Sflg = (tmp s< 0);
+	Zflg = (tmp == 0);
+	dest = tmp;
 }
 
 macro macro_or(src, dest) {
-	dest = dest | src;
-	Sflg = (dest s< 0);
-	Zflg = (dest == 0);
+	local tmp = dest | src;
+	Sflg = (tmp s< 0);
+	Zflg = (tmp == 0);
+	dest = tmp;
 }
 
 macro macro_sbb8(src, dest) {
@@ -420,11 +432,13 @@ macro macro_sbb16(src, dest) {
 }
 
 macro macro_sub(src, dest) {
-	local tmp = dest - src;
+	local s = src;
+	local d = dest;
+	local tmp = d - s;
 	Cflg = (tmp s>= 0);
 	Zflg = (tmp == 0);
 	Sflg = (tmp s< 0);
-	Oflg = sborrow(dest, src);
+	Oflg = sborrow(d, s);
 	dest = tmp;
 }
 
