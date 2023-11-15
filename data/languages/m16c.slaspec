@@ -1734,46 +1734,48 @@ PUSHMDISP: PUSHFB PUSHSB PUSHA1 PUSHA0 PUSHR3 PUSHR2 PUSHR1 PUSHR0 is PUSHFB & P
 #:SBJNZ
 #:SHA
 
-# TODO C Flag
 :SHA.w sha_imm12_15, d_eaw         is (op1_7=0x78 & size0=1 & sha_imm12_15 &bit15=0) ... & d_eaw {
-	d_eaw = d_eaw << sha_imm12_15;
-	Sflg = (d_eaw s< 0);
-	Zflg = (d_eaw == 0);
+	local d = d_eaw;
+	d = d << sha_imm12_15;
+	Sflg = (d s< 0);
+	Zflg = (d == 0);
+	Cflg = ((d << (sha_imm12_15-1)) & 0x8000) != 0;
+	d_eaw = d;
 }
 
-# TODO C Flag
 :SHA.w sha_imm12_15, d_eaw         is (op1_7=0x78 & size0=1 & sha_imm12_15 &bit15=1) ... & d_eaw {
-	d_eaw = d_eaw s>> sha_imm12_15;
-	Sflg = (d_eaw s< 0);
-	Zflg = (d_eaw == 0);
+	local d = d_eaw;
+	d = d s>> (-sha_imm12_15);
+	Sflg = (d s< 0);
+	Zflg = (d == 0);
+	Cflg = ((d >> (-sha_imm12_15-1)) & 0x0001) != 0;
+	d_eaw = d;
 }
 
-# TODO C Flag
+macro macro_SHL(val, shift, msb)
+{
+	local d = val;
+	local c_pos:1 = (shift s> 0) && (((d << ( shift-1)) & msb) != 0);
+	local c_neg:1 = (shift s< 0) && (((d >> (-shift-1)) & 1) != 0);
+	d = zext(shift s> 0 )*(d << shift) + zext(shift s< 0)*(d >> (-shift));
+	Sflg = (d s< 0);
+	Zflg = (d == 0);
+	Cflg = c_pos || c_neg;
+	val = d;
+}
 :SHL.b sha_imm12_15, d_eab         is (op1_7=0x74 & size0=0 & sha_imm12_15) ... & d_eab {
-	d_eab = d_eab << sha_imm12_15;
-	Sflg = (d_eab s< 0);
-	Zflg = (d_eab == 0);
+	macro_SHL(d_eab, sha_imm12_15:1, 0x80);
 }
-
-# TODO C Flag
 :SHL.w sha_imm12_15, d_eaw         is (op1_7=0x74 & size0=1 & sha_imm12_15) ... & d_eaw {
-	d_eaw = d_eaw << sha_imm12_15;
-	Sflg = (d_eaw s< 0);
-	Zflg = (d_eaw == 0);
+	macro_SHL(d_eaw, sha_imm12_15:1, 0x8000);
 }
 
-# TODO C Flag
 :SHL.b R1H, d_eab                  is (R1H & op1_7=0x3A & size0=0 & op12_15=0x0E) ... & d_eab {
-	d_eab = d_eab << R1H;
-	Sflg = (d_eab s< 0);
-	Zflg = (d_eab == 0);
+	macro_SHL(d_eab, R1H, 0x80);
 }
 
-# TODO C Flag
 :SHL.w R1H, d_eaw                  is (R1H & op1_7=0x3A & size0=1 & op12_15=0x0E)  ... & d_eaw {
-	d_eaw = d_eaw << R1H;
-	Sflg = (d_eaw s< 0);
-	Zflg = (d_eaw == 0);
+	macro_SHL(d_eaw, R1H, 0x8000);
 }
 
 :SHL.l shl_imm8_11, R2R0           is R2R0 & op0_7=0xEB &  op12_15=0x08 & shl_imm8_11 {
