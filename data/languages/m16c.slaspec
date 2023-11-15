@@ -984,8 +984,6 @@ ADJNZ_DEST: addr  is dsp8 [addr = dsp8 + (inst_start + 2);] {
 	R2R0 = sext(R0);
 }
 
-define pcodeop FLAG_CLEAR;
-define pcodeop FLAG_SET;
 define pcodeop INTERRUPTS_ENABLE;
 define pcodeop INTERRUPTS_DISABLE;
 
@@ -1000,11 +998,11 @@ define pcodeop INTERRUPTS_DISABLE;
 }
 
 :FCLR flg12_14                     is op0_7=0xEB & op8_11=0x05 & bit15=0 & flg12_14 {
-	FLAG_CLEAR(flg12_14);
+	flg12_14 = 0;
 }
 
 :FSET flg12_14                     is op0_7=0xEB & op8_11=0x04 & bit15=0 & flg12_14 {
-	FLAG_SET(flg12_14);
+	flg12_14 = 1;
 }
 
 
