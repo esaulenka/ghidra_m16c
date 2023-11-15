@@ -1225,7 +1225,7 @@ define pcodeop IPL_LOAD;
 }
 
 :MOV.w "#"imm12_15, d_eaw             is (op1_7=0x6C & size0=1 & imm12_15) ... & d_eaw {
-	macro_mov(zext(imm12_15:1), d_eaw);
+	macro_mov(sext(imm12_15:1), d_eaw);
 }
 
 :MOV.b "#"imm8_15, d_imm              is (op3_7_imm8=0x18 & imm8_15) ... & d_imm {
