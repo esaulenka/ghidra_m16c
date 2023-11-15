@@ -1734,21 +1734,44 @@ PUSHMDISP: PUSHFB PUSHSB PUSHA1 PUSHA0 PUSHR3 PUSHR2 PUSHR1 PUSHR0 is PUSHFB & P
 
 :SHA.w sha_imm12_15, d_eaw         is (op1_7=0x78 & size0=1 & sha_imm12_15 &bit15=0) ... & d_eaw {
 	local d = d_eaw;
+	Cflg = ((d << (sha_imm12_15-1)) & 0x8000) != 0;
 	d = d << sha_imm12_15;
 	Sflg = (d s< 0);
 	Zflg = (d == 0);
-	Cflg = ((d << (sha_imm12_15-1)) & 0x8000) != 0;
 	d_eaw = d;
 }
 
 :SHA.w sha_imm12_15, d_eaw         is (op1_7=0x78 & size0=1 & sha_imm12_15 &bit15=1) ... & d_eaw {
 	local d = d_eaw;
+	Cflg = ((d >> (-sha_imm12_15-1)) & 0x0001) != 0;
 	d = d s>> (-sha_imm12_15);
 	Sflg = (d s< 0);
 	Zflg = (d == 0);
-	Cflg = ((d >> (-sha_imm12_15-1)) & 0x0001) != 0;
 	d_eaw = d;
 }
+
+macro macro_SHA_R1H(d_eaX, msb)
+{
+	local d = d_eaX;
+	if (R1H s> 0) goto <shiftleft>;
+		Cflg = ((d >> (-R1H-1)) & 0x0001) != 0;
+		d = d s>> (-R1H);
+		goto <done>;
+	<shiftleft>
+		Cflg = ((d << (R1H-1)) & msb) != 0;
+		d = d << R1H;
+	<done>
+	Sflg = (d s< 0);
+	Zflg = (d == 0);
+	d_eaX = d;
+}
+:SHA.w R1H, d_eaw                  is (R1H & op1_7=0x3A & size0=1 & op12_15=0x0F)  ... & d_eaw {
+	macro_SHA_R1H(d_eaw, 0x8000);
+}
+:SHA.b R1H, d_eab                  is (R1H & op1_7=0x3A & size0=0 & op12_15=0x0F)  ... & d_eab {
+	macro_SHA_R1H(d_eab, 0x80);
+}
+
 
 macro macro_SHL(val, shift, msb)
 {
