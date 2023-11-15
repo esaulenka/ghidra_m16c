@@ -448,12 +448,6 @@ macro macro_sub(src, dest) {
 
 @define SRCDEST16 "op8_11 & op12_15 ; s_eaw1 ; d_eaw1 [srcmode=op12_15; destmode=op8_11;]"
 
-#:ABS.b d_eab           is (op1_7=0x3b & size0=0 & op12_15=0xf) ... & d_eab {
-#}
-#
-#:ABS.w d_eaw           is (op1_7=0x3b & size0=1 & op12_15=0xf) ... & d_eaw {
-#
-
 u8: "#"imm8 is imm8 {
     export *[const]:1 imm8;
 }
@@ -461,6 +455,19 @@ u8: "#"imm8 is imm8 {
 u16: "#"imm16 is imm16 {
     export *[const]:2 imm16;
 }
+
+:ABS.b d_eab           is (op1_7=0x3b & size0=0 & op12_15=0xf) ... & d_eab {
+	local tmp = d_eab;
+	tmp = (tmp s> 0)*tmp - (tmp s< 0)*tmp;
+	d_eab = tmp;
+}
+
+:ABS.w d_eaw           is (op1_7=0x3b & size0=1 & op12_15=0xf) ... & d_eaw {
+	local tmp = d_eaw;
+	tmp = zext(tmp s> 0)*tmp - zext(tmp s< 0)*tmp;
+	d_eaw = tmp;
+}
+
 
 :ADC.b u8, dest8_11               is op1_7=0x3b & size0=0 & op12_15=0x6 & dest8_11 & $(DEST_IS_An); u8 {
 	macro_adc16(zext(u8:1), dest8_11);
