@@ -588,32 +588,35 @@ ADJNZ_DEST: addr  is dsp8 [addr = dsp8 + (inst_start + 2);] {
 #}
 
 :BCLR dsp8, dest8_11               is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11 & (dest8_11=0 |dest8_11=1 | dest8_11=2 |dest8_11 =3 |dest8_11=4 |dest8_11=5);dsp8 {
-	dest8_11 = dest8_11&~(1 << zext(dsp8:1));
+	dest8_11 = dest8_11 & ~(1 << zext(dsp8:1));
 }
 
 :BCLR bit, addr                    is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11 & (dest8_11=6 | dest8_11=7) [addr=dest8_11/8; bit=dest8_11-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2&~(1 << zext(bit:1));
+	*[near]:1 addr:2 = *[near]:1 addr:2 & ~(1 << bit);
 }
 
 :BCLR bit, addr                    is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11 & (dest8_11=8 | dest8_11=9 | dest8_11=10); dsp8 [addr=(dest8_11+dsp8)/8; bit=(dest8_11+dsp8)-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2&~(1 << zext(bit:1));
+	*[near]:1 addr:2 = *[near]:1 addr:2 & ~(1 << bit);
 }
 
 :BCLR bit, addr[FB]                    is FB & op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11=11; dsp8 [addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
 	local tmp:2 = FB+addr;
-	*[near]:1 tmp = *[near]:1 tmp&~(1 << zext(bit:1));
+	*[near]:1 tmp = *[near]:1 tmp & ~(1 << bit);
 }
 
 :BCLR bit, addr                    is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11 & (dest8_11=12 | dest8_11=13 | dest8_11=14); dsp16 [addr=(dest8_11+dsp16)/8; bit=(dest8_11+dsp16)-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2&~(1 << zext(bit:1));
+	*[near]:1 addr:2 = *[near]:1 addr:2&~(1 << bit);
 }
 
 :BCLR bit, addr                    is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11=15; abs16 [addr=abs16/8; bit=abs16-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2&~(1 << zext(bit:1));
+	*[near]:1 addr:2 = *[near]:1 addr:2 & ~(1 << bit);
 }
 
-#:BCLR bit0_2, SB[dsp8] is op=0x8 & bit0_2 & SB;dsp8 {
-#}
+:BCLR bit0_2, SB[dsp8]             is op=0x8 & bit0_2 & SB; dsp8 {
+	local addr:2 = SB + dsp8;
+	*[near]:1 addr = *[near]:1 addr & ~(1 << bit0_2);
+}
+
 
 :BM^COND8 dsp8, dest8_11           is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11 & (dest8_11 = 0 | dest8_11=1 | dest8_11=2 |dest8_11 =3 |dest8_11=4 |dest8_11=5);dsp8; COND8 {
 	macro_bm(COND8:1, dsp8:1, dest8_11);
@@ -627,7 +630,7 @@ ADJNZ_DEST: addr  is dsp8 [addr = dsp8 + (inst_start + 2);] {
 	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
 }
 
-:BM^COND8  bit, addr[FB]              is FB & op0_7=0x7E & op12_15=0x2 & dest8_11=11; dsp8; COND8 [addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
+:BM^COND8  bit, addr[FB]           is FB & op0_7=0x7E & op12_15=0x2 & dest8_11=11; dsp8; COND8 [addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
 	local tmp:2 = FB+addr;
 	macro_bm(COND8:1, bit:1, *[near]:1 tmp);
 }
@@ -669,79 +672,88 @@ ADJNZ_DEST: addr  is dsp8 [addr = dsp8 + (inst_start + 2);] {
 
 
 :BSET dsp8, dest8_11               is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11 & (dest8_11 = 0 | dest8_11=1 | dest8_11=2 |dest8_11 =3 |dest8_11=4 |dest8_11=5);dsp8 {
-	dest8_11 = dest8_11|(1 << zext(dsp8:1));
+	dest8_11 = dest8_11 | (1 << zext(dsp8:1));
 }
 
 :BSET bit, addr                    is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11 & (dest8_11=6 | dest8_11=7) [addr=dest8_11/8; bit=dest8_11-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2|(1 << zext(bit:1));
+	*[near]:1 addr:2 = *[near]:1 addr:2 | (1 << bit);
 }
 
 :BSET bit, addr                    is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11 & (dest8_11=8 | dest8_11=9 | dest8_11=10); dsp8 [addr=(dest8_11+dsp8)/8; bit=(dest8_11+dsp8)-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2|(1 << zext(bit:1));
+	*[near]:1 addr:2 = *[near]:1 addr:2 | (1 << bit);
 }
 
 :BSET bit, addr[FB]                    is FB & op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11=11; dsp8 [addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
-	local tmp:2 = FB+addr;
-	*[near]:1 tmp = *[near]:1 tmp|(1 << zext(bit:1));
+	local tmp:2 = FB + addr;
+	*[near]:1 tmp = *[near]:1 tmp | (1 << bit);
 }
 
 :BSET bit, addr                    is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11 & (dest8_11=12 | dest8_11=13 | dest8_11=14); dsp16 [addr=(dest8_11+dsp16)/8; bit=(dest8_11+dsp16)-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2|(1 << zext(bit:1));
+	*[near]:1 addr:2 = *[near]:1 addr:2 | (1 << bit);
 }
 
 :BSET bit, addr                    is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11=15; abs16 [addr=abs16/8; bit=abs16-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2|(1 << zext(bit:1));
+	*[near]:1 addr:2 = *[near]:1 addr:2 | (1 << bit);
 }
 
-#:BSET bit0_2, SB[dsp8] is op=0x09 & bit0_2 &SB; dsp8 {
-#}
+:BSET bit0_2, SB[dsp8]             is op=0x09 & bit0_2 &SB; dsp8 {
+	local addr:2 = SB + dsp8;
+	*[near]:1 addr = *[near]:1 addr | (1 << bit0_2);
+}
+
 
 :BTST dsp8, dest8_11               is op0_7=0x7E & op12_15=0x0B & dest8_11 & (dest8_11=0 |dest8_11=1 | dest8_11=2 |dest8_11 =3 |dest8_11=4 |dest8_11=5);dsp8 {
-	local newv = dest8_11&(1 << zext(dsp8:1));
+	local newv = dest8_11 & (1 << zext(dsp8:1));
 	Cflg = (newv != 0);
 	Zflg = (newv == 0);
 }
 
 :BTST bit, addr                    is op0_7=0x7E & op12_15=0x0B & dest8_11 & (dest8_11=6 | dest8_11=7) [addr=dest8_11/8; bit=dest8_11-(addr*8);] {
-	local newv = *[near]:1 addr:2&(1 << zext(bit:1));
+	local newv = *[near]:1 addr:2 & (1 << bit);
 	Cflg = (newv != 0);
 	Zflg = (newv == 0);
 }
 
 :BTST bit, addr                    is op0_7=0x7E & op12_15=0x0B & dest8_11 & (dest8_11=8 | dest8_11=9 | dest8_11=10); dsp8 [addr=(dest8_11+dsp8)/8; bit=(dest8_11+dsp8)-(addr*8);] {
-	local newv = *[near]:1 addr:2&(1 << zext(bit:1));
+	local newv = *[near]:1 addr:2 & (1 << bit);
 	Cflg = (newv != 0);
 	Zflg = (newv == 0);
 }
 
 :BTST bit, addr[FB]                    is FB & op0_7=0x7E & op12_15=0x0B & dest8_11=11; dsp8 [addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
-	local tmp:2 = FB+addr;
-	local newv = *[near]:1 tmp&(1 << zext(bit:1));
+	local tmp:2 = FB + addr;
+	local newv = *[near]:1 tmp & (1 << bit);
 	Cflg = (newv != 0);
 	Zflg = (newv == 0);
 }
 
 :BTST bit, addr                    is op0_7=0x7E & op12_15=0x0B & dest8_11 & (dest8_11=12 | dest8_11=13); dsp16 [addr=(dest8_11+dsp16)/8; bit=(dest8_11+dsp16)-(addr*8);] {
-	local newv = *[near]:1 addr:2&(1 << zext(bit:1));
+	local newv = *[near]:1 addr:2 & (1 << bit);
 	Cflg = (newv != 0);
 	Zflg = (newv == 0);
 }
 
 :BTST bit, addr                    is op0_7=0x7E & op12_15=0x0B & dest8_11=14; dsp16 [addr=(FB+dsp16)/8; bit=(FB+dsp16)-(addr*8);] {
-	local newv = *[near]:1 addr:2&(1 << zext(bit:1));
+	local newv = *[near]:1 addr:2 & (1 << bit);
 	Cflg = (newv != 0);
 	Zflg = (newv == 0);
 }
 
 
 :BTST bit, addr                    is op0_7=0x7E & op12_15=0x0B & dest8_11=15; abs16 [addr=abs16/8; bit=abs16-(addr*8);] {
-	local newv = *[near]:1 addr:2&(1 << zext(bit:1));
+	local newv = *[near]:1 addr:2 & (1 << bit);
 	Cflg = (newv != 0);
 	Zflg = (newv == 0);
 }
 
-#:BTST bit0_2, SB[dsp8] is op=0x0B & bit0_2 & SB; dsp8 {
-#}
+
+:BTST bit0_2, SB[dsp8]             is op=0x0B & bit0_2 & SB; dsp8 {
+	local addr:2 = SB + dsp8;
+	local newv = *[near]:1 addr & (1 << bit0_2);
+	Cflg = (newv != 0);
+	Zflg = (newv == 0);
+}
+
 
 #:BTSTC d_eaw           is (op1_7=0x3F & size0=0 & op12_15=0x00) ...& d_eaw {
 #}
