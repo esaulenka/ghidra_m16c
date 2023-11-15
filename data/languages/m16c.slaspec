@@ -1968,13 +1968,12 @@ define pcodeop STORE_CONTEXT;
 }
 
 :STZX imm8_15, imm8, d_imm         is (op3_7_imm8=0x1b & imm8_15) ... & d_imm; imm8 {
-	if (Zflg) goto <Ztrue>;
 	if (!Zflg) goto <Zfalse>;
-	<Ztrue>
-	d_imm = imm8_15;
-	goto <end>;
+		# Z = true
+		d_imm = imm8_15;
+		goto <end>;
 	<Zfalse>
-	d_imm = imm8;
+		d_imm = imm8;
 	<end>
 }
 
