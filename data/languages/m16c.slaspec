@@ -160,12 +160,13 @@ s_addr: dsp16[A1]  is A1 & srcmode=13; dsp16 { local temp:2 = A1 + dsp16; export
 s_addr: dsp16[SB]  is SB & srcmode=14; dsp16 { local temp:2 = SB + dsp16; export temp; } 
 s_addr: abs16      is srcmode=15; abs16      { local temp:2 = abs16; export temp; }
 
-#d_eal1: R2R0      is R2R0 & destmode=0      { export R2R0; }
-#d_eal1: R3R1      is R3R1 & destmode=1      { export R3R1; }
-#d_eal1: A1A0      is A1A0 & destmode=4      { export A1A0; }
-#d_eal1: [A0]      is A0 & destmode=6        { export *:4 A0; }
-#d_eal1: [A1]      is A1 & destmode=7        { export *:4 A1; }
-#d_eal1: d_addr    is d_addr                 { local temp = d_addr; export *:4 temp; }
+# universal destination, dword size
+d_eal1: R2R0      is R2R0 & destmode=0      { export R2R0; }
+d_eal1: R3R1      is R3R1 & destmode=1      { export R3R1; }
+d_eal1: A1A0      is A1A0 & destmode=4      { export A1A0; }
+d_eal1: [A0]      is A0 & destmode=6        { export *:4 A0; }
+d_eal1: [A1]      is A1 & destmode=7        { export *:4 A1; }
+d_eal1: d_addr    is d_addr                 { local temp = d_addr; export *[near]:4 temp; }
 
 # universal destination, word size
 d_eaw1: R0         is R0 & destmode=0        { export R0; }
@@ -1300,58 +1301,38 @@ MOVA_ADDRESS: abs16            is dest8_11 & dest8_11=15; abs16 { local addr:2 =
 	R0L = (R0L & 0xF0)|(d_eab  & 0xF0);
 }
 
-#:MUL.b imm8, d_eab     is (op1_7=0x3E & size0=0 & op12_15=0x05) ... & d_eab; imm8 {
-#}
 
-:MUL.b u8, mul8b8_11             is op1_7=0x3E & size0=0 & op12_15=0x05 & dest8_11 & (dest8_11=0|dest8_11=1|dest8_11=2|dest8_11=3) & mul8b8_11; u8 {
-	local tmp:2 = sext(u8:1)*sext(mul8b8_11);
-	dest8_11 = tmp;
+:MUL.w u16, d_eal1                is op1_7=0x3E & size0=1 & op12_15=0x05 & op8_11; d_eal1 & d_eaw1; u16 [ destmode=op8_11; ]{
+	d_eal1 = sext(d_eaw1) * sext(u16);
 }
-
-# TODO: Implement everything else other than destination being R2R0 R3R1 A1A0
-:MUL.w u16, dest8_11             is op1_7=0x3E & size0=1 & op12_15=0x05 & (mul8_11=0|mul8_11=1|mul8_11=4) & mul8_11 & dest8_11; u16 {
-	local temp:4 = sext(dest8_11:2)*sext(u16);
-	mul8_11 = temp;
+:MUL.b u8, d_eaw1                 is op1_7=0x3E & size0=0 & op12_15=0x05 & op8_11; d_eaw1 & d_eab1; u8 [ destmode=op8_11; ]{
+	d_eaw1 = sext(d_eab1) * sext(u8);
 }
-
-#:MUL.b s_eab, d_eab    is op1_7=0x3C & size0=0 & src12_15 & dest8_11; s_eab; d_eab {
-#}
-
-:MUL.w src12_15, dest8_11    is op1_7=0x3C & size0=1 & dest8_11 & src12_15 & (mul8_11=0|mul8_11=1|mul8_11=4) & (src12_15=0|src12_15=1|src12_15=2|src12_15=3|src12_15=4) & mul8_11  {
-	mul8_11 = sext(src12_15)*sext(dest8_11);	
+:MUL.w s_eaw1, d_eal1             is op1_7=0x3C & size0=1 & op12_15 & op8_11; s_eaw1; d_eal1 & d_eaw1
+	[ destmode=op8_11; srcmode=op12_15; ]{
+	d_eal1 = sext(d_eaw1) * sext(s_eaw1);
+}
+:MUL.b s_eab1, d_eaw1             is op1_7=0x3C & size0=0 & op12_15 & op8_11; s_eab1; d_eaw1 & d_eab1
+	[ destmode=op8_11; srcmode=op12_15; ]{
+	d_eaw1 = sext(d_eab1) * sext(s_eab1);
 }
 
 
-:MULU.b u8, mul8b8_11            is op1_7=0x3E & size0=0 & op12_15=0x04 & dest8_11 & (dest8_11=0|dest8_11=1|dest8_11=2|dest8_11=3) & mul8b8_11; u8 {
-	local tmp:2 = zext(u8:1)*zext(mul8b8_11);
-	dest8_11 = tmp;
+:MULU.w u16, d_eal1               is op1_7=0x3E & size0=1 & op12_15=0x04 & op8_11; d_eal1 & d_eaw1; u16 [ destmode=op8_11; ] {
+	d_eal1 = zext(u16) * zext(d_eaw1);
+}
+:MULU.b u8, d_eaw1                is op1_7=0x3E & size0=0 & op12_15=0x04 & op8_11; d_eaw1 & d_eab1; u8 [ destmode=op8_11; ] {
+	d_eaw1 = zext(u8) * zext(d_eab1);
+}
+:MULU.w s_eaw1, d_eal1            is op1_7=0x38 & size0=1 & op12_15 & op8_11; s_eaw1; d_eal1 & d_eaw1
+	[srcmode=op12_15; destmode=op8_11;] {
+	d_eal1 = zext(s_eaw1) * zext(d_eaw1);
+}
+:MULU.b s_eab1, d_eaw1            is op1_7=0x38 & size0=0 & op12_15 & op8_11; s_eab1; d_eaw1 & d_eab1
+	[srcmode=op12_15; destmode=op8_11;] {
+	d_eaw1 = zext(s_eab1) * zext(d_eab1);
 }
 
-#:MULU.b imm8, dest8_11             is op1_7=0x3E & size0=0 & op12_15=0x04 & dest8_11 & (dest8_11=0|dest8_11=1|dest8_11=2|dest8_11=3|dest8_11=4|dest8_11=5); imm8 {
-#	local tmp:2 = zext(imm8:1)*dest8_11;
-#	dest8_11 = tmp;
-#}
-
-#:MULU.b imm8, d_eab                is (op1_7=0x3E & size0=0 & op12_15=0x04) ... & d_eab; imm8 {
-#}
-
-# TODO: Implement everything else other than destination being R2R0 R3R1 A1A0
-:MULU.w u16, dest8_11            is op1_7=0x3E & size0=1 & op12_15=0x04 & (mul8_11=0|mul8_11=1|mul8_11=4) & mul8_11 & dest8_11; u16 {
-	local temp:4 = zext(dest8_11:2)*zext(u16:2);
-	mul8_11 = temp;
-}
-
-#:MULU.b s_eab1, dest8_11           is (op1_7=0x38 & size0=0 & op8_11 & op12_15 & dest8_11 & $(DEST_IS_An)) ... & s_eab1 [srcmode=op12_15; destmode=op8_11;] {
-#	local tmp:2 = zext(s_eab1:1)*dest8_11;
-#	dest8_11 = tmp;
-#}
-#
-#:MULU.b s_eab1, d_eab1             is op1_7=0x38 & size0=0 & $(SRCDEST8) {
-#}
-
-:MULU.w s_eaw1, d_eaw1             is (op1_7=0x38 & size0=1 & op8_11 & op12_15 & src32_8_11 & (src32_8_11=0 | src32_8_11=1 | src32_8_11=3)); s_eaw1; d_eaw1  [srcmode=op12_15; destmode=op8_11;] {
-	src32_8_11 = zext(d_eaw1)*zext(s_eaw1);
-}
 
 :NEG.b d_eab                       is (op1_7=0x3A & size0=0 & op12_15=0x05) ... & d_eab {
 	Oflg = (d_eab == -128);
