@@ -135,7 +135,7 @@ attach values [shl_imm8_11 sha_imm12_15] [1 2 3 4 5 6 7 8 -1 -2 -3 -4 -5 -6 -7 -
 
 
 
-attach variables [ldc12_14] [_ INTBL INTBH FLAG ISP USP SB _];
+attach variables [ldc12_14] [_ INTBL INTBH FLAG ISP USP SB FB];
 
 attach variables [srcb12_13] [R0L R0H R1L R1H];
 attach variables [srcw12_13] [R0 R1 R2 R3];
@@ -1120,25 +1120,16 @@ dest4: addr  is dsp8 [addr = (inst_start+2)+dsp8;] {
 ##	SP = zext(USP);
 #}
 
-:LDC u16, FB                     is FB & op0_7=0xEB & op8_11=0x00 & ldc12_14=0x7 & bit15=0; u16 {
-	FB = u16;
-#	SP = zext(USP);
-}
-
 :LDC u16, ldc12_14               is op0_7=0xEB & op8_11=0x00 & ldc12_14 & bit15=0; u16 {
 	ldc12_14 = u16;
 #	SP = zext(USP);
-}
-
-:LDC d_eaw, FB                     is (FB & op0_7=0x7A & ldc12_14=0x07 & bit15=1) ... & d_eaw {
-	FB = d_eaw;
 }
 
 :LDC d_eaw, ldc12_14               is (op0_7=0x7A & ldc12_14 & bit15=1) ... & d_eaw {
 	ldc12_14 = d_eaw;
 }
 
-# TODO: Implement this?
+# TODO: Implement LDCTX
 define pcodeop LOAD_CONTEXT;
 
 :LDCTX abs16, abs20                is op0_15=0xF07C; abs16; abs20 {
@@ -1508,9 +1499,10 @@ MOVA_ADDRESS: abs16            is dest8_11 & dest8_11=15; abs16 { local addr:2 =
 	SP = SP + 2;
 }
 
-
-#:POPC ldc12_14         is op0_7=0xEB & ldc12_14 &  op8_11=0x03 {
-#}
+:POPC ldc12_14         is op0_7=0xEB & ldc12_14 &  op8_11=0x03 {
+	ldc12_14 = *[near]:2 SP;
+	SP = SP + 2;
+}
 
 POPFB: FB is FB & bit15=1 {FB = *[near]:2 SP; SP = SP+2;}
 POPFB:    is bit15=0 {}
@@ -1596,11 +1588,6 @@ _addr: abs16      is op8_11=15; abs16      { local temp:2 = abs16:2; export temp
 	SP = SP-2;
 	*[near]:2 SP = _addr;
 }
-
-:PUSHC FB                          is FB & op0_7=0xEB & op8_11=0x02 & ldc12_14=0x7 & bit15=0 {
-	SP = SP-2;
-	*[near]:2 SP = FB:2;
-} 
 
 :PUSHC FLAG                        is FLAG & op0_7=0xEB & op8_11=0x02 & ldc12_14=0x03 & bit15=0 {
 	SP = SP-2;
@@ -1884,15 +1871,11 @@ macro macro_SHL(val, shift, msb)
 	A1 = addr;
 }
 
-:STC FB, d_eaw                     is (FB & op0_7=0x7B & bit15=1 & ldc12_14=0x07) ... & d_eaw {
-	d_eaw = FB:2;
-} 
-
 :STC ldc12_14, d_eaw               is (op0_7=0x7B & bit15=1 & ldc12_14) ... & d_eaw {
 	d_eaw = ldc12_14;
 }
 
-# TODO: Implement this?
+# TODO: Implement STCTX
 define pcodeop STORE_CONTEXT;
 
 :STCTX abs16, abs20                is op0_15=0xF07D; abs16; abs20 {
