@@ -115,8 +115,10 @@ define context contextreg
 	guard    = (0, 0)
 	destmode = (1, 4)
 	srcmode  = (5, 8)
-	addrmode = (9,12) ;
-	
+	addrmode = (9,12)
+;
+
+# some magic, see details in .pspec file
 define pcodeop segment;
 
 
@@ -133,13 +135,12 @@ attach variables [dest_SHAL_12] [R2R0 R3R1];
 attach values [imm8_11 imm12_15] [0 1 2 3 4 5 6 7 -8 -7 -6 -5 -4 -3 -2 -1];
 attach values [shl_imm8_11 sha_imm12_15] [1 2 3 4 5 6 7 8 -1 -2 -3 -4 -5 -6 -7 -8];
 
-
-
 attach variables [ldc12_14] [_ INTBL INTBH FLAG ISP USP SB FB];
 
 attach variables [srcb12_13] [R0L R0H R1L R1H];
 attach variables [srcw12_13] [R0 R1 R2 R3];
 
+# destination types 8..15; used by d_eaw1 and d_eab1
 d_addr: dsp8[A0]   is A0 & destmode=8; dsp8   { local temp:2 = A0 + dsp8; export temp; }
 d_addr: dsp8[A1]   is A1 & destmode=9; dsp8   { local temp:2 = A1 + dsp8; export temp; }
 d_addr: dsp8[SB]   is SB & destmode=10; dsp8  { local temp:2 = SB + dsp8; export temp; } 
@@ -149,6 +150,7 @@ d_addr: dsp16[A1]  is A1 & destmode=13; dsp16 { local temp:2 = A1 + dsp16; expor
 d_addr: dsp16[SB]  is SB & destmode=14; dsp16 { local temp:2 = SB + dsp16; export temp; } 
 d_addr: abs16      is destmode=15; abs16      { local temp:2 = abs16; export temp; }
 
+# source types 8..15; used by s_eaw1 and s_eab1
 s_addr: dsp8[A0]   is A0 & srcmode=8; dsp8   { local temp:2 = A0 + dsp8; export temp; }
 s_addr: dsp8[A1]   is A1 & srcmode=9; dsp8   { local temp:2 = A1 + dsp8; export temp; }
 s_addr: dsp8[SB]   is SB & srcmode=10; dsp8  { local temp:2 = SB + dsp8; export temp; } 
@@ -158,109 +160,68 @@ s_addr: dsp16[A1]  is A1 & srcmode=13; dsp16 { local temp:2 = A1 + dsp16; export
 s_addr: dsp16[SB]  is SB & srcmode=14; dsp16 { local temp:2 = SB + dsp16; export temp; } 
 s_addr: abs16      is srcmode=15; abs16      { local temp:2 = abs16; export temp; }
 
-#d_eal1: R2R0      is R2R0 & destmode=0       { export R2R0; }
-#d_eal1: R3R1      is R3R1 & destmode=1       { export R3R1; }
-#d_eal1: A1A0      is A1A0 & destmode=4       { export A1A0; }
-#d_eal1: [A0]      is A0 & destmode=6         { export *:4 A0; }
-#d_eal1: [A1]      is A1 & destmode=7         { export *:4 A1; }
-#d_eal1: d_addr    is d_addr                  { local temp = d_addr; export *:4 temp; }
-d_eaw1: R0        is R0 & destmode=0         { export R0; }
-d_eaw1: R1        is R1 & destmode=1         { export R1; }
-d_eaw1: R2        is R2 & destmode=2         { export R2; }
-d_eaw1: R3        is R3 & destmode=3         { export R3; }
-d_eaw1: A0        is A0 & destmode=4         { export A0; }
-d_eaw1: A1        is A1 & destmode=5         { export A1; }
-d_eaw1: [A0]      is A0 & destmode=6         { export *[near]:2 A0; }
-d_eaw1: [A1]      is A1 & destmode=7         { export *[near]:2 A1; }
-d_eaw1: d_addr    is d_addr                  { local temp = d_addr; export *[near]:2 temp; }
+#d_eal1: R2R0      is R2R0 & destmode=0      { export R2R0; }
+#d_eal1: R3R1      is R3R1 & destmode=1      { export R3R1; }
+#d_eal1: A1A0      is A1A0 & destmode=4      { export A1A0; }
+#d_eal1: [A0]      is A0 & destmode=6        { export *:4 A0; }
+#d_eal1: [A1]      is A1 & destmode=7        { export *:4 A1; }
+#d_eal1: d_addr    is d_addr                 { local temp = d_addr; export *:4 temp; }
 
-d_eab1: R0L                  is destmode=0 & R0L                   { export R0L; }
-d_eab1: R0H                  is destmode=1 & R0H                   { export R0H; }
-d_eab1: R1L                  is destmode=2 & R1L                   { export R1L; }
-d_eab1: R1H                  is destmode=3 & R1H                   { export R1H; }
-d_eab1: A0                   is A0 & destmode=4                    { local temp = (A0:1); export temp; }
-d_eab1: A1                   is A1 & destmode=5                    { local temp = (A1:1); export temp; }
-d_eab1: [A0]                 is A0 & destmode=6                    { local temp = A0; export *[near]:1 temp; }
-d_eab1: [A1]                 is A1 & destmode=7                    { local temp = A1; export *[near]:1 temp; }
-d_eab1: d_addr               is d_addr                             { local temp = d_addr; export *[near]:1 temp; }
+# universal destination, word size
+d_eaw1: R0         is R0 & destmode=0        { export R0; }
+d_eaw1: R1         is R1 & destmode=1        { export R1; }
+d_eaw1: R2         is R2 & destmode=2        { export R2; }
+d_eaw1: R3         is R3 & destmode=3        { export R3; }
+d_eaw1: A0         is A0 & destmode=4        { export A0; }
+d_eaw1: A1         is A1 & destmode=5        { export A1; }
+d_eaw1: [A0]       is A0 & destmode=6        { export *[near]:2 A0; }
+d_eaw1: [A1]       is A1 & destmode=7        { export *[near]:2 A1; }
+d_eaw1: d_addr     is d_addr                 { local temp = d_addr; export *[near]:2 temp; }
 
-s_eaw1: R0      is R0 & srcmode=0 { export R0; }
-s_eaw1: R1      is R1 & srcmode=1 { export R1; }
-s_eaw1: R2      is R2 & srcmode=2 { export R2; }
-s_eaw1: R3      is R3 & srcmode=3 { export R3; }
-s_eaw1: A0      is A0 & srcmode=4 { export A0; }
-s_eaw1: A1      is A1 & srcmode=5 { export A1; }
-s_eaw1: [A0]    is A0 & srcmode=6 { export *[near]:2 A0; }
-s_eaw1: [A1]    is A1 & srcmode=7 { export *[near]:2 A1; }
-s_eaw1: s_addr  is s_addr         { local temp = s_addr; export *[near]:2 temp; }
+# universal destination, byte size
+d_eab1: R0L        is destmode=0 & R0L       { export R0L; }
+d_eab1: R0H        is destmode=1 & R0H       { export R0H; }
+d_eab1: R1L        is destmode=2 & R1L       { export R1L; }
+d_eab1: R1H        is destmode=3 & R1H       { export R1H; }
+d_eab1: A0         is A0 & destmode=4        { local temp = (A0:1); export temp; }
+d_eab1: A1         is A1 & destmode=5        { local temp = (A1:1); export temp; }
+d_eab1: [A0]       is A0 & destmode=6        { local temp = A0; export *[near]:1 temp; }
+d_eab1: [A1]       is A1 & destmode=7        { local temp = A1; export *[near]:1 temp; }
+d_eab1: d_addr     is d_addr                 { local temp = d_addr; export *[near]:1 temp; }
 
-s_eab1: R0L             is srcmode=0 & R0L               { export R0L; }
-s_eab1: R0H             is srcmode=1 & R0H               { export R0H; }
-s_eab1: R1L             is srcmode=2 & R1L               { export R1L; }
-s_eab1: R1H             is srcmode=3 & R1H               { export R1H; }
-s_eab1: A0              is A0 & srcmode=4                { local temp = (A0:1); export temp; }
-s_eab1: A1              is A1 & srcmode=5                { local temp = (A1:1); export temp; }
-s_eab1: [A0]            is A0 & srcmode=6                { local temp = A0; export *[near]:1 temp; }
-s_eab1: [A1]            is A1 & srcmode=7                { local temp = A1; export *[near]:1 temp; }
-s_eab1: s_addr          is s_addr                        { local temp = s_addr; export *[near]:1 temp; }
+# universal source, word size
+s_eaw1: R0         is R0 & srcmode=0         { export R0; }
+s_eaw1: R1         is R1 & srcmode=1         { export R1; }
+s_eaw1: R2         is R2 & srcmode=2         { export R2; }
+s_eaw1: R3         is R3 & srcmode=3         { export R3; }
+s_eaw1: A0         is A0 & srcmode=4         { export A0; }
+s_eaw1: A1         is A1 & srcmode=5         { export A1; }
+s_eaw1: [A0]       is A0 & srcmode=6         { export *[near]:2 A0; }
+s_eaw1: [A1]       is A1 & srcmode=7         { export *[near]:2 A1; }
+s_eaw1: s_addr     is s_addr                 { local temp = s_addr; export *[near]:2 temp; }
 
-d_eaw: R0         is R0 & dest8_11=0         { export R0; }
-d_eaw: R1         is R1 & dest8_11=1         { export R1; }
-d_eaw: R2         is R2 & dest8_11=2         { export R2; }
-d_eaw: R3         is R3 & dest8_11=3         { export R3; }
-d_eaw: A0         is A0 & dest8_11=4         { export A0; }
-d_eaw: A1         is A1 & dest8_11=5         { export A1; }
-d_eaw: [A0]       is A0 & dest8_11=6         { export *[near]:2 A0; }
-d_eaw: [A1]       is A1 & dest8_11=7         { export *[near]:2 A1; }
-d_eaw: dsp8[A0]   is A0 & dest8_11=8; dsp8   { local temp:2 = A0 + dsp8; export *[near]:2 temp; }
-d_eaw: dsp8[A1]   is A1 & dest8_11=9; dsp8   { local temp:2 = A1 + dsp8; export *[near]:2 temp; } 
-d_eaw: dsp8[SB]   is SB & dest8_11=10; dsp8  { local temp:2 = SB + dsp8; export *[near]:2 temp; } 
-d_eaw: dsp8[FB]   is FB & dest8_11=11 ; dsp8 { local temp:2 = FB+sext(dsp8:1); export *[near]:2 temp; } 
-d_eaw: dsp16[A0]  is A0 & dest8_11=12; dsp16 { local temp:2 = A0 + dsp16; export *[near]:2 temp; } 
-d_eaw: dsp16[A1]  is A1 & dest8_11=13; dsp16 { local temp:2 = A1 + dsp16; export *[near]:2 temp; } 
-d_eaw: dsp16[SB]  is SB & dest8_11=14; dsp16 { local temp:2 = SB + dsp16; export *[near]:2 temp; } 
-d_eaw: abs16      is dest8_11=15; abs16      { export *[near]:2 abs16; }
+# universal source, byte size
+s_eab1: R0L        is srcmode=0 & R0L        { export R0L; }
+s_eab1: R0H        is srcmode=1 & R0H        { export R0H; }
+s_eab1: R1L        is srcmode=2 & R1L        { export R1L; }
+s_eab1: R1H        is srcmode=3 & R1H        { export R1H; }
+s_eab1: A0         is A0 & srcmode=4         { local temp = (A0:1); export temp; }
+s_eab1: A1         is A1 & srcmode=5         { local temp = (A1:1); export temp; }
+s_eab1: [A0]       is A0 & srcmode=6         { local temp = A0; export *[near]:1 temp; }
+s_eab1: [A1]       is A1 & srcmode=7         { local temp = A1; export *[near]:1 temp; }
+s_eab1: s_addr     is s_addr                 { local temp = s_addr; export *[near]:1 temp; }
+
+# universal operands for one-operand instructions
+d_eaw: d_eaw1      is op8_11 ;  d_eaw1 [ destmode = op8_11; ] { export d_eaw1; }
+d_eab: d_eab1      is op8_11 ;  d_eab1 [ destmode = op8_11; ] { export d_eab1; }
+s_eab: s_eab1      is op12_15 ; s_eab1 [ srcmode = op12_15; ] { export s_eab1; }
 
 
-d_eab: R0L                   is dest8_11=0 & R0L                   { export R0L; }
-d_eab: R0H                   is dest8_11=1 & R0H                   { export R0H; }
-d_eab: R1L                   is dest8_11=2 & R1L                   { export R1L; }
-d_eab: R1H                   is dest8_11=3 & R1H                   { export R1H; }
-d_eab: dest8_11              is dest8_11 & dest8_11=4              { local temp = (dest8_11:1); export temp; }
-d_eab: dest8_11              is dest8_11 & dest8_11=5              { local temp = (dest8_11:1); export temp; }
-d_eab: dest8_11              is dest8_11 & dest8_11=6              { export *[near]:1 dest8_11; }
-d_eab: dest8_11              is dest8_11 & dest8_11=7              { export *[near]:1 dest8_11; }
-d_eab: dest_dsp8[dest8_11]   is dest8_11 & dest8_11=8; dest_dsp8   { local temp:2 = dest8_11 + dest_dsp8; export *[near]:1 temp; }
-d_eab: dest_dsp8[dest8_11]   is dest8_11 & dest8_11=9; dest_dsp8   { local temp:2 = dest8_11 + dest_dsp8; export *[near]:1 temp; }
-d_eab: dest_dsp8[dest8_11]   is dest8_11 & dest8_11=10; dest_dsp8  { local temp:2 = dest8_11 + dest_dsp8; export *[near]:1 temp; }
-d_eab: dest_dsp8[FB]         is FB & dest8_11=11; dest_dsp8        { local temp:2 = FB+sext(dest_dsp8:1); export *[near]:1 temp; } 
-d_eab: dest_dsp16[dest8_11]  is dest8_11 & dest8_11=12; dest_dsp16 { local temp:2 = dest8_11 + dest_dsp16; export *[near]:1 temp; }
-d_eab: dest_dsp16[dest8_11]  is dest8_11 & dest8_11=13; dest_dsp16 { local temp:2 = dest8_11 + dest_dsp16; export *[near]:1 temp; }
-d_eab: dest_dsp16[SB]        is SB & dest8_11=14; dest_dsp16       { local temp:2 = SB + dest_dsp16; export *[near]:1 temp; }
-d_eab: dest_abs16            is dest8_11=15; dest_abs16            { local temp:2 = dest_abs16; export *[near]:1 temp; }
-
-s_eab: R0L              is src12_15=0 & R0L              { export R0L; }
-s_eab: R0H              is src12_15=1 & R0H              { export R0H; }
-s_eab: R1L              is src12_15=2 & R1L              { export R1L; }
-s_eab: R1H              is src12_15=3 & R1H              { export R1H; }
-s_eab: src12_15         is src12_15 & src12_15=4         { local temp = src12_15:1; export temp; }
-s_eab: src12_15         is src12_15 & src12_15=5         { local temp = src12_15:1; export temp; }
-s_eab: src12_15         is src12_15 & src12_15=6         { local temp = src12_15; export *[near]:1 temp; }
-s_eab: src12_15         is src12_15 & src12_15=7         { local temp = src12_15; export *[near]:1 temp; }
-s_eab: dsp8[src12_15]   is src12_15 & src12_15=8; dsp8   { local temp = (src12_15 + dsp8); export *[near]:1 temp; }
-s_eab: dsp8[src12_15]   is src12_15 & src12_15=9; dsp8   { local temp = (src12_15 + dsp8); export *[near]:1 temp; }
-s_eab: dsp8[src12_15]   is src12_15 & src12_15=10; dsp8  { local temp = (src12_15 + dsp8); export *[near]:1 temp; }
-s_eab: dsp8[FB]         is FB &       src12_15=11; dsp8  { local temp = FB + sext(dsp8:1); export *[near]:1 temp; }
-s_eab: dsp16[src12_15]  is src12_15 & src12_15=12; dsp16 { local temp = (src12_15 + dsp16); export *[near]:1 temp; }
-s_eab: dsp16[src12_15]  is src12_15 & src12_15=13; dsp16 { local temp = (src12_15 + dsp16); export *[near]:1 temp; }
-s_eab: dsp16[src12_15]  is src12_15 & src12_15=14; dsp16 { local temp = (src12_15 + dsp16); export *[near]:1 temp; }
-s_eab: abs16            is src12_15=15; abs16            { local temp = (abs16:2); export *[near]:1 temp; }
-
-SRC2: R0L       is src2=0x00 & dest2_2=1 & R0L { export R0L; }
-SRC2: R0H       is src2=0x00 & dest2_2=0 & R0H { export R0H; }
-SRC2: dsp8[SB]  is src2=1 & SB; dsp8           { local temp = (SB + dsp8); export *[near]:1 temp; }
-SRC2: dsp8[FB]  is src2=2  & FB; dsp8          { local temp = FB + sext(dsp8:1); export *[near]:1 temp; }
-SRC2: abs16     is src2=3; abs16               { export *[near]:1 abs16; }
+SRC2: R0L          is src2=0x00 & dest2_2=1 & R0L { export R0L; }
+SRC2: R0H          is src2=0x00 & dest2_2=0 & R0H { export R0H; }
+SRC2: dsp8[SB]     is src2=1 & SB; dsp8           { local temp = (SB + dsp8); export *[near]:1 temp; }
+SRC2: dsp8[FB]     is src2=2  & FB; dsp8          { local temp = FB + sext(dsp8:1); export *[near]:1 temp; }
+SRC2: abs16        is src2=3; abs16               { export *[near]:1 abs16; }
 
 d_d_eab: R0H       is R0H & dest0_2=3     { export R0H; }
 d_d_eab: R0L       is R0L & dest0_2=4     { export R0L; }
@@ -268,12 +229,13 @@ d_d_eab: dsp8[SB]  is SB & dest0_2=5;dsp8 { local temp = (SB +dsp8); export *[ne
 d_d_eab: dsp8[FB]  is FB & dest0_2=6;dsp8 { local temp = FB + sext(dsp8:1); export *[near]:1 temp; }
 d_d_eab: abs16     is dest0_2=7;abs16     { export *[near]:1 abs16; }
 
-d_imm: R0H       is R0H & dest0_2_imm8=3     { export R0H; }
-d_imm: R0L       is R0L & dest0_2_imm8=4     { export R0L; }
-d_imm: dsp8[SB]  is SB & dest0_2_imm8=5;dsp8 { local temp = (SB +dsp8); export *[near]:1 temp; }
-d_imm: dsp8[FB]  is FB & dest0_2_imm8=6;dsp8 { local temp = FB + sext(dsp8:1); export *[near]:1 temp; }
-d_imm: abs16     is dest0_2_imm8=7;abs16     { export *[near]:1 abs16; }
+d_imm: R0H         is R0H & dest0_2_imm8=3     { export R0H; }
+d_imm: R0L         is R0L & dest0_2_imm8=4     { export R0L; }
+d_imm: dsp8[SB]    is SB & dest0_2_imm8=5;dsp8 { local temp = (SB +dsp8); export *[near]:1 temp; }
+d_imm: dsp8[FB]    is FB & dest0_2_imm8=6;dsp8 { local temp = FB + sext(dsp8:1); export *[near]:1 temp; }
+d_imm: abs16       is dest0_2_imm8=7;abs16     { export *[near]:1 abs16; }
 
+# EXTS.b operand
 j_n_eaw: [A0]       is A0 & dest8_11=6         { local temp:2 = A0; export temp; }
 j_n_eaw: [A1]       is A1 & dest8_11=7         { local temp:2 = A1; export temp; }
 j_n_eaw: dsp8[A0]   is A0 & dest8_11=8; dsp8   { local temp:2 = A0 + dsp8; export temp; }
@@ -285,17 +247,19 @@ j_n_eaw: dsp16[A1]  is A1 & dest8_11=13; dsp16 { local temp:2 = A1 + dsp16; expo
 j_n_eaw: dsp16[SB]  is SB & dest8_11=14; dsp16 { local temp:2 = SB + dsp16; export temp; } 
 j_n_eaw: abs16      is dest8_11=15; abs16      { local temp:2 = abs16; export temp; }
 
-j_eaw: [A0]       is A0 & dest8_11=6         { local temp:4 = zext(A0); export *:2 temp; }
-j_eaw: [A1]       is A1 & dest8_11=7         { local temp:4 = zext(A1); export *:2 temp; }
-j_eaw: dsp8[A0]   is A0 & dest8_11=8; dsp8   { local temp:4 = zext(A0 + dsp8); export *:2 temp; }
-j_eaw: dsp8[A1]   is A1 & dest8_11=9; dsp8   { local temp:4 = zext(A1 + dsp8); export *:2 temp; } 
-j_eaw: dsp8[SB]   is SB & dest8_11=10; dsp8  { local temp:4 = zext(SB + dsp8); export *:2 temp; } 
-j_eaw: dsp8[FB]   is FB & dest8_11=11 ; dsp8 { local temp:4 = zext(FB+sext(dsp8:1)); export *:2 temp; } 
-j_eaw: dsp20[A0]  is A0 & dest8_11=12; dsp20 { local temp:4 = zext(zext(A0) + dsp20:3); export *:2 temp; } 
-j_eaw: dsp20[A1]  is A1 & dest8_11=13; dsp20 { local temp:4 = zext(zext(A1) + dsp20:3); export *:2 temp; } 
-j_eaw: dsp16[SB]  is SB & dest8_11=14; dsp16 { local temp:4 = zext(SB + dsp16:2); export *:2 temp; } 
-j_eaw: abs16      is dest8_11=15; abs16      { local temp:4 = zext(abs16:2); export *:2 temp; }
+# JMPI.w, JSRI.w, JSRI.a operand
+j_eaw: [A0]         is A0 & dest8_11=6         { local temp:4 = zext(A0); export *:2 temp; }
+j_eaw: [A1]         is A1 & dest8_11=7         { local temp:4 = zext(A1); export *:2 temp; }
+j_eaw: dsp8[A0]     is A0 & dest8_11=8; dsp8   { local temp:4 = zext(A0 + dsp8); export *:2 temp; }
+j_eaw: dsp8[A1]     is A1 & dest8_11=9; dsp8   { local temp:4 = zext(A1 + dsp8); export *:2 temp; }
+j_eaw: dsp8[SB]     is SB & dest8_11=10; dsp8  { local temp:4 = zext(SB + dsp8); export *:2 temp; }
+j_eaw: dsp8[FB]     is FB & dest8_11=11 ; dsp8 { local temp:4 = zext(FB+sext(dsp8:1)); export *:2 temp; }
+j_eaw: dsp20[A0]    is A0 & dest8_11=12; dsp20 { local temp:4 = zext(zext(A0) + dsp20:3); export *:2 temp; }
+j_eaw: dsp20[A1]    is A1 & dest8_11=13; dsp20 { local temp:4 = zext(zext(A1) + dsp20:3); export *:2 temp; }
+j_eaw: dsp16[SB]    is SB & dest8_11=14; dsp16 { local temp:4 = zext(SB + dsp16:2); export *:2 temp; }
+j_eaw: abs16        is dest8_11=15; abs16      { local temp:4 = zext(abs16:2); export *:2 temp; }
 
+# BMxxx condition
 COND8: "GEU/C"   is cnd8=0x00    { local tmp:1 = Cflg; export tmp; }
 COND8: "GTU"     is cnd8=0x01    { local tmp:1 = (Cflg && !Zflg); export tmp; }
 COND8: "EQ/Z"    is cnd8=0x02    { local tmp:1 = Zflg == 1; export tmp; }
@@ -311,6 +275,7 @@ COND8: "GT"      is cnd8=0xfc    { local tmp:1 = !Zflg && (Oflg == Sflg); export
 COND8: "NO"      is cnd8=0xfd    { local tmp:1 = !Oflg; export tmp; }
 COND8: "LT"      is cnd8=0xfe    { local tmp:1 = (Oflg != Sflg); export tmp; }
 
+# BMxxx, Jxxx condition
 #COND4: "GEU/C"   is cnd8_11=0x00 { local tmp:1 = Cflg; export tmp; }
 #COND4: "GTU"     is cnd8_11=0x01 { local tmp:1 = Cflg==!Zflg; export tmp; }
 #COND4: "EQ/Z"    is cnd8_11=0x02 { local tmp:1 = Zflg; export tmp; }
@@ -326,6 +291,7 @@ COND4: "GT"      is cnd8_11=0x0C { local tmp:1 = !Zflg && (Oflg == Sflg); export
 COND4: "NO"      is cnd8_11=0x0D { local tmp:1 = !Oflg; export tmp; }
 COND4: "LT"      is cnd8_11=0x0E { local tmp:1 = (Oflg != Sflg); export tmp; }
 
+# Jxxx condition
 COND3: "GEU/C"   is cnd0_2=0x00  { local tmp:1 = Cflg; export tmp; }
 COND3: "GTU"     is cnd0_2=0x01  { local tmp:1 = (Cflg && !Zflg); export tmp; }
 COND3: "EQ/Z"    is cnd0_2=0x02  { local tmp:1 = Zflg; export tmp; }
@@ -334,6 +300,7 @@ COND3: "LTU/NC"  is cnd0_2=0x04  { local tmp:1 = !Cflg; export tmp; }
 COND3: "LEU"     is cnd0_2=0x05  { local tmp:1 = (!Cflg || Zflg); export tmp; }
 COND3: "NE/NZ"   is cnd0_2=0x06  { local tmp:1 = !Zflg; export tmp; }
 COND3: "PZ"      is cnd0_2=0x07  { local tmp:1 = !Sflg; export tmp; }
+
 
 macro macro_adc8(src, dest) {
 	local tmp = dest + src + Cflg;
@@ -450,13 +417,10 @@ macro macro_sub(src, dest) {
 
 @define SRCDEST16 "op8_11 & op12_15 ; s_eaw1 ; d_eaw1 [srcmode=op12_15; destmode=op8_11;]"
 
-u8: "#"imm8 is imm8 {
-    export *[const]:1 imm8;
-}
+u8:  "#"imm8    is imm8  { export *[const]:1 imm8; }
+u16: "#"imm16   is imm16 { export *[const]:2 imm16; }
 
-u16: "#"imm16 is imm16 {
-    export *[const]:2 imm16;
-}
+
 
 :ABS.b d_eab           is (op1_7=0x3b & size0=0 & op12_15=0xf) ... & d_eab {
 	local tmp = d_eab;
