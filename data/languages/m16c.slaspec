@@ -1862,6 +1862,10 @@ macro macro_SHL(val, shift, msb)
 :STC ldc12_14, d_eaw               is (op0_7=0x7B & bit15=1 & ldc12_14) ... & d_eaw {
 	d_eaw = ldc12_14;
 }
+# FIXME implement others destinations
+:STC "PC", src32_8_11 is (op0_7=0x7C & op12_15=0xC & src32_8_11) {
+	src32_8_11 = inst_start;
+}
 
 # TODO: Implement STCTX
 define pcodeop STORE_CONTEXT;
