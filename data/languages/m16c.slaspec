@@ -849,84 +849,72 @@ ADJNZ_DEST: addr  is dsp8 [addr = dsp8 + (inst_start + 2);] {
 	dest_a0_a1 = tmp;
 }
 
+macro macro_DIV(dividend, divisor, quotient, remainder, result_max)
+{
+	local q = dividend / sext(divisor);
+	local r = dividend % sext(divisor);
+	Oflg = (divisor == 0) || (q s< (-result_max-1)) || (q s> result_max);
+	quotient = q:2;
+	remainder = r:2;
+}
 :DIV.b u8            is op1_7=0x3e & size0=0 & op8_15=0xe1; u8 {
-	local q = R0 / sext(u8);
-	local r = R0 % sext(u8);
-	Oflg = (u8 == 0);
-	Oflg = (q > 255);
-	R0L = q:2;
-	R0H = r:2;
+	macro_DIV(R0, u8, R0L, R0H, 0x7f);
 }
-
 :DIV.w u16           is op1_7=0x3e & size0=1 & op8_15=0xe1; u16 {
-	local q = R2R0 / sext(u16);
-	local r = R2R0 % sext(u16);
-	Oflg = (u16 == 0);
-	Oflg = (q > 65535);
-	R0 = q:2;
-	R2 = r:2;
+	macro_DIV(R2R0, u16, R0, R2, 0x7fff);
 }
-
 :DIV.b d_eab           is (op1_7=0x3B & size0=0 & op12_15=0xD) ... & d_eab {
-	local q = R0 / sext(d_eab);
-	local r = R0 % sext(d_eab);
-	Oflg = (d_eab == 0);
-	Oflg = (q > 255);
-	R0L = q:2;
-	R0H = r:2;
+	macro_DIV(R0, d_eab, R0L, R0H, 0x7f);
 }
-
 :DIV.w d_eaw           is (op1_7=0x3B & size0=1 & op12_15=0xD) ... & d_eaw {
-	local q = R2R0 / sext(d_eaw);
-	local r = R2R0 % sext(d_eaw);
-	Oflg = (d_eaw == 0);
-	Oflg = (q > 65535);
-	R0 = q:2;
-	R2 = r:2;
+	macro_DIV(R2R0, d_eaw, R0, R2, 0x7fff);
 }
 
+macro macro_DIVU(dividend, divisor, quotient, remainder, result_max)
+{
+	local q = dividend / zext(divisor);
+	local r = dividend % zext(divisor);
+	Oflg = (divisor == 0) || (q > result_max);
+	quotient = q:2;
+	remainder = r:2;
+}
 :DIVU.b u8           is op1_7=0x3e & size0=0 & op8_15=0xe0; u8 {
-	local q = R0 / zext(u8);
-	local r = R0 % zext(u8);
-	Oflg = (u8 == 0);
-	Oflg = (q > 255);
-	R0L = q:2;
-	R0H = r:2;
+	macro_DIVU(R0, u8, R0L, R0H, 0xff);
 }
-
 :DIVU.w u16                      is op1_7=0x3e & size0=1 & op8_15=0xe0; u16 {
-	local q = R2R0 / zext(u16);
-	local r = R2R0 % zext(u16);
-	Oflg = (u16 == 0);
-	Oflg = (q > 65535);
-	R0 = q:2;
-	R2 = r:2;
+	macro_DIVU(R2R0, u16, R0, R2, 0xffff);
 }
-
-#:DIVU.b d_eab          is (op1_7=0x3B & size0=0 & op12_15=0xC) ... & d_eab {
-#}
-
+:DIVU.b d_eab          is (op1_7=0x3B & size0=0 & op12_15=0xC) ... & d_eab {
+	macro_DIVU(R0, d_eab, R0L, R0H, 0xff);
+}
 :DIVU.w d_eaw                      is (op1_7=0x3B & size0=1 & op12_15=0xC) ... & d_eaw {
-	local q = R2R0 / zext(d_eaw);
-	local r = R2R0 % zext(d_eaw);
-	Oflg = (d_eaw == 0);
-	Oflg = (q > 65535);
-	R0 = q:2;
-	R2 = r:2;
+	macro_DIVU(R2R0, d_eaw, R0, R2, 0xffff);
 }
 
-#:DIVX.b imm8           is op1_7=0x3e & size0=0 & op8_15=0xe3; imm8 {
-#}
-#
-#:DIVX.b imm16          is op1_7=0x3e & size0=1 & op8_15=0xe3; imm16 {
-#}
-#
-#:DIVX.b d_eab          is (op1_7=0x3B & size0=0 & op12_15=0x9) ... & d_eab {
-#}
-#
-#:DIVX.w d_eaw          is (op1_7=0x3B & size0=1 & op12_15=0x9) ... & d_eaw {
-#}
-#
+# FIXME find how to write this difference:
+# DIV:  The remainder has the same sign as the dividend.
+# DIVX: The remainder has the same sign as the divisor.
+macro macro_DIVX(dividend, divisor, quotient, remainder, result_max)
+{
+	local q = dividend / sext(divisor);
+	local r = dividend % sext(divisor);
+	Oflg = (divisor == 0) || (q s< (-result_max-1)) || (q s> result_max);
+	quotient = q:2;
+	remainder = r:2;
+}
+:DIVX.b u8             is op1_7=0x3e & size0=0 & op8_15=0xe3; u8 {
+	macro_DIVX(R0, u8, R0L, R0H, 0x7f);
+}
+:DIVX.w u16            is op1_7=0x3e & size0=1 & op8_15=0xe3; u16 {
+	macro_DIVX(R2R0, u16, R0, R2, 0x7fff);
+}
+:DIVX.b d_eab          is (op1_7=0x3B & size0=0 & op12_15=0x9) ... & d_eab {
+	macro_DIVX(R0, d_eab, R0L, R0H, 0x7f);
+}
+:DIVX.w d_eaw          is (op1_7=0x3B & size0=1 & op12_15=0x9) ... & d_eaw {
+	macro_DIVX(R2R0, d_eaw, R0, R2, 0x7fff);
+}
+
 #:DSBB.b imm8, R0L      is op0_15=0x7CEF & R0L; imm8 {
 #}
 #
