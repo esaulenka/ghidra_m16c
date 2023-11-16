@@ -39,12 +39,14 @@ define token operand_g (16)
 	ldc12_14     = (12,14)
 	imm8_10      = ( 8,10)
 	dest12_14    = (12,14)
+	dest_SHAL_12 = (12,12)
 	src32_8_11   = ( 8,11)
 	mul8_11      = ( 8,11)
 	mul8b8_11    = ( 8,11)
 	srcb12_13    = (12,13)
 	srcw12_13    = (12,13)
 	dir          = (12,13)
+	op13_15      = (13,15)
 	bit8         = (8,8)
 	bit9         = (9,9)
 	bit10        = (10,10)
@@ -119,18 +121,18 @@ define pcodeop segment;
 
 
 attach variables [dest8_11 src12_15] [R0 R1 R2 R3 A0 A1 A0 A1 A0 A1 SB _ A0 A1 SB _ ];
-attach variables [mul8_11] [R2R0 R3R1 _ _ A1A0 _ _ _ _ _ _ _ _ _ _ _];
+attach variables [src32_8_11 mul8_11] [R2R0 R3R1 _ _ A1A0 _ _ _ _ _ _ _ _ _ _ _];
 attach variables [mul8b8_11] [R0L R0H R1L R1H _ _ _ _ _ _ _ _ _ _ _ _];
 attach variables [dest2_2] [R0L R0H];
 attach variables [dest3_r0l_r0h] [R0L R0H];
 attach variables [dest2_a0_a1 dest_a0_a1] [A0 A1];
 attach variables [flg12_14] [Cflg Dflg Zflg Sflg Bflg Oflg Iflg Uflg];
 attach variables [dest12_14] [R0 R1 R2 R3 A0 A1 _ _];
+attach variables [dest_SHAL_12] [R2R0 R3R1];
 
 attach values [imm8_11 imm12_15] [0 1 2 3 4 5 6 7 -8 -7 -6 -5 -4 -3 -2 -1];
 attach values [shl_imm8_11 sha_imm12_15] [1 2 3 4 5 6 7 8 -1 -2 -3 -4 -5 -6 -7 -8];
 
-attach variables [src32_8_11] [R2R0 R3R1 _ _ A1A0 _ _ _ _ _ _ _ _ _ _ _];
 
 
 attach variables [ldc12_14] [_ INTBL INTBH FLAG ISP USP SB _];
@@ -180,7 +182,7 @@ d_eab1: A0                   is A0 & destmode=4                    { local temp 
 d_eab1: A1                   is A1 & destmode=5                    { local temp = (A1:1); export temp; }
 d_eab1: [A0]                 is A0 & destmode=6                    { local temp = A0; export *[near]:1 temp; }
 d_eab1: [A1]                 is A1 & destmode=7                    { local temp = A1; export *[near]:1 temp; }
-d_eab1: d_addr               is  d_addr                             { local temp = d_addr; export *[near]:1 temp; }
+d_eab1: d_addr               is d_addr                             { local temp = d_addr; export *[near]:1 temp; }
 
 s_eaw1: R0      is R0 & srcmode=0 { export R0; }
 s_eaw1: R1      is R1 & srcmode=1 { export R1; }
@@ -1098,13 +1100,11 @@ dest4: addr  is dsp8 [addr = (inst_start+2)+dsp8;] {
 #}
 
 
-:JSRI.a src32_8_11                 is op0_7=0x7D & op12_15=0x01 & src32_8_11 & (src32_8_11=0 | src32_8_11 = 1 | src32_8_11 =4) {
+:JSRI.a src32_8_11                 is op0_7=0x7D & op12_15=0x01 & src32_8_11 & (src32_8_11=0 | src32_8_11=1 | src32_8_11=4){
 	SP = SP-3;
 	*[near]:3 SP = inst_next;
 	call [src32_8_11];
 }
-
-
 
 :JSRI.a j_eaw                      is (op0_7=0x7D & op12_15=0x01) ...& j_eaw {
 	SP = SP-3;
@@ -1739,22 +1739,22 @@ PUSHMDISP: PUSHFB PUSHSB PUSHA1 PUSHA0 PUSHR3 PUSHR2 PUSHR1 PUSHR0 is PUSHFB & P
 #:SBJNZ
 #:SHA
 
-:SHA.w sha_imm12_15, d_eaw         is (op1_7=0x78 & size0=1 & sha_imm12_15 &bit15=0) ... & d_eaw {
-	local d = d_eaw;
-	Cflg = ((d << (sha_imm12_15-1)) & 0x8000) != 0;
-	d = d << sha_imm12_15;
+macro macro_SHA_imm(val, shift, msb)
+{
+	local d = val;
+	local c_pos:1 = (shift s> 0) && (((d  << ( shift-1)) & msb) != 0);
+	local c_neg:1 = (shift s< 0) && (((d s>> (-shift-1)) & 1) != 0);
+	d = zext(shift s> 0 )*(d << shift) + zext(shift s< 0)*(d >> (-shift));
 	Sflg = (d s< 0);
 	Zflg = (d == 0);
-	d_eaw = d;
-}
+	Cflg = c_pos || c_neg;
+	val = d;}
 
-:SHA.w sha_imm12_15, d_eaw         is (op1_7=0x78 & size0=1 & sha_imm12_15 &bit15=1) ... & d_eaw {
-	local d = d_eaw;
-	Cflg = ((d >> (-sha_imm12_15-1)) & 0x0001) != 0;
-	d = d s>> (-sha_imm12_15);
-	Sflg = (d s< 0);
-	Zflg = (d == 0);
-	d_eaw = d;
+:SHA.w sha_imm12_15, d_eaw         is (op1_7=0x78 & size0=1 & sha_imm12_15) ... & d_eaw {
+	macro_SHA_imm(d_eaw, sha_imm12_15:1, 0x8000);
+}
+:SHA.L shl_imm8_11, dest_SHAL_12   is (op0_7=0xEB & op13_15=0x5 & dest_SHAL_12 & shl_imm8_11) {
+	macro_SHA_imm(dest_SHAL_12, shl_imm8_11:1, 0x80000000);
 }
 
 macro macro_SHA_R1H(d_eaX, msb)
@@ -1778,7 +1778,9 @@ macro macro_SHA_R1H(d_eaX, msb)
 :SHA.b R1H, d_eab                  is (R1H & op1_7=0x3A & size0=0 & op12_15=0x0F)  ... & d_eab {
 	macro_SHA_R1H(d_eab, 0x80);
 }
-
+:SHA.L R1H, dest_SHAL_12           is (R1H & op0_7=0xEB & op13_15=0x1 & dest_SHAL_12 & op8_11=0xF) {
+	macro_SHA_R1H(dest_SHAL_12, 0x80000000);
+}
 
 macro macro_SHL(val, shift, msb)
 {
