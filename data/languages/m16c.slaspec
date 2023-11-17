@@ -621,9 +621,12 @@ ADJNZ_DEST: addr  is dsp8 [addr = dsp8 + (inst_start + 2);] {
 	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
 }
 
-##:BM^COND4 "C"          is (op1_7=0x3E & size0=1 &op12_15=0xD) ... & COND4 {
-##}
-#
+
+:BM^COND4 Cflg          is op1_7=0x3E & size0=1 & op12_15=0xD & COND4 & Cflg {
+	Cflg = COND4;
+}
+
+
 #:BNAND d_eaw           is (op1_7=0x3F & size0=0 & op12_15=0x05) ... & d_eaw {
 #}
 #
