@@ -1251,12 +1251,16 @@ ZERO: "0"  is epsilon {
 
 :MOV.b d_eab, dsp8[SP]             is (SP & op1_7=0x3A & size0=0 & op12_15=0x03) ... & d_eab; dsp8 {
 	local addr:2 = SP+sext(dsp8:1);
-	macro_mov(d_eab, *[near]:1 addr);
+	local temp:1;
+	macro_mov(d_eab, temp);
+	*[near] addr = temp;
 }
 
 :MOV.w d_eaw, dsp8[SP]             is (SP & op1_7=0x3A & size0=1 & op12_15=0x03) ... & d_eaw; dsp8 {
 	local addr:2 = SP+sext(dsp8:1);
-	macro_mov(d_eaw, *[near]:2 addr);
+	local temp:2;
+	macro_mov(d_eaw, temp);
+	*[near] addr = temp;
 }
 
 MOVA_ADDRESS: dsp8[dest8_11]   is dest8_11 & dest8_11=8; dsp8   { local addr:2 = dest8_11+zext(dsp8:1); export addr; }
