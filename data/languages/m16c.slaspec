@@ -1658,7 +1658,6 @@ PUSHMDISP: PUSHFB PUSHSB PUSHA1 PUSHA0 PUSHR3 PUSHR2 PUSHR1 PUSHR0 is PUSHFB & P
 }
 
 #:SBJNZ
-#:SHA
 
 macro macro_SHA_imm(val, shift, msb)
 {
@@ -1669,8 +1668,8 @@ macro macro_SHA_imm(val, shift, msb)
 	Sflg = (d s< 0);
 	Zflg = (d == 0);
 	Cflg = c_pos || c_neg;
-	val = d;}
-
+	val = d;
+}
 :SHA.w sha_imm12_15, d_eaw         is (op1_7=0x78 & size0=1 & sha_imm12_15) ... & d_eaw {
 	macro_SHA_imm(d_eaw, sha_imm12_15:1, 0x8000);
 }
@@ -1708,7 +1707,7 @@ macro macro_SHL(val, shift, msb)
 	local d = val;
 	local c_pos:1 = (shift s> 0) && (((d << ( shift-1)) & msb) != 0);
 	local c_neg:1 = (shift s< 0) && (((d >> (-shift-1)) & 1) != 0);
-	d = zext(shift s> 0 )*(d << shift) + zext(shift s< 0)*(d >> (-shift));
+	d = zext(shift s> 0)*(d << shift) + zext(shift s< 0)*(d >> (-shift));
 	Sflg = (d s< 0);
 	Zflg = (d == 0);
 	Cflg = c_pos || c_neg;
@@ -1720,31 +1719,25 @@ macro macro_SHL(val, shift, msb)
 :SHL.w sha_imm12_15, d_eaw         is (op1_7=0x74 & size0=1 & sha_imm12_15) ... & d_eaw {
 	macro_SHL(d_eaw, sha_imm12_15:1, 0x8000);
 }
-
 :SHL.b R1H, d_eab                  is (R1H & op1_7=0x3A & size0=0 & op12_15=0x0E) ... & d_eab {
 	macro_SHL(d_eab, R1H, 0x80);
 }
-
 :SHL.w R1H, d_eaw                  is (R1H & op1_7=0x3A & size0=1 & op12_15=0x0E)  ... & d_eaw {
 	macro_SHL(d_eaw, R1H, 0x8000);
 }
 
-:SHL.l shl_imm8_11, R2R0           is R2R0 & op0_7=0xEB &  op12_15=0x08 & shl_imm8_11 {
-	R2R0 = R2R0 << shl_imm8_11;
+:SHL.L shl_imm8_11, R2R0           is R2R0 & op0_7=0xEB & op12_15=0x08 & shl_imm8_11 {
+	macro_SHL(R2R0, shl_imm8_11:1, 0x80000000);
 }
-
-:SHL.l shl_imm8_11, R3R1           is R3R1 & op0_7=0xEB & op12_15=0x09 & shl_imm8_11 {
-	R3R1 = R3R1 << shl_imm8_11;
+:SHL.L shl_imm8_11, R3R1           is R3R1 & op0_7=0xEB & op12_15=0x09 & shl_imm8_11 {
+	macro_SHL(R3R1, shl_imm8_11:1, 0x80000000);
 }
-
-:SHL.l R1H, R2R0           is R1H & R2R0 & op0_7=0xEB &  op12_15=0x0 & shl_imm8_11 {
-	R2R0 = R2R0 << R1H;
+:SHL.L R1H, R2R0                   is R1H & R2R0 & op0_7=0xEB &  op12_15=0x0 & shl_imm8_11 {
+	macro_SHL(R2R0, R1H, 0x80000000);
 }
-
-:SHL.l R1H, R3R1           is R1H & R3R1 & op0_7=0xEB & op12_15=0x01 & shl_imm8_11 {
-	R3R1 = R3R1 << R1H;
+:SHL.l R1H, R3R1                   is R1H & R3R1 & op0_7=0xEB & op12_15=0x01 & shl_imm8_11 {
+	macro_SHL(R3R1, R1H, 0x80000000);
 }
-
 
 
 :SMOVF.b                           is op1_7=0x3E & size0=0 & op8_15=0xE8 {
