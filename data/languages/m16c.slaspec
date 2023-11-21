@@ -74,12 +74,15 @@ define token operand_s (8)
 ;
 
 define token data8 (8)
-	dsp8       = (0,7) signed
-	imm8       = (0,7)
-	cnd8       = (0,7)
-	interrupt  = (0,5)
-	data8_bit6 = (6,6)
-	data8_bit7 = (7,7)
+	dsp8         = (0,7) signed
+	imm8         = (0,7)
+	cnd8         = (0,7)
+	interrupt    = (0,5)
+	data8_bits47 = (4,7)
+	data8_bit6   = (6,6)
+	data8_bit7   = (7,7)
+	bitNo8       = (0,2)
+	bitBase8     = (3,7)
 ;
 
 define token dest_data8 (8)
@@ -92,6 +95,8 @@ define token data16 (16)
 	dsp16 = (0,15) signed
 	abs16 = (0,15)
 	imm16 = (0,15)
+	bitNo16 = (0,2)
+	bitBase16 = (3,15)
 ;
 
 define token dest_data16 (16)
@@ -259,6 +264,40 @@ j_eaw: dsp20[A0]    is A0 & dest8_11=12; dsp20 { local temp:4 = zext(zext(A0) + 
 j_eaw: dsp20[A1]    is A1 & dest8_11=13; dsp20 { local temp:4 = zext(zext(A1) + dsp20:3); export *:2 temp; }
 j_eaw: dsp16[SB]    is SB & dest8_11=14; dsp16 { local temp:4 = zext(SB + dsp16:2); export *:2 temp; }
 j_eaw: abs16        is dest8_11=15; abs16      { local temp:4 = zext(abs16:2); export *:2 temp; }
+
+# Bit manipulating instructions, byte address
+# R0, R1, R2, R3, A0, A1
+s_bitV: imm8,dest8_11   is dest8_11 & op8_11=0; imm8 & data8_bits47=0 { local addr = &R0 + (imm8 / 8); export *[register]:1 addr; }
+s_bitV: imm8,dest8_11   is dest8_11 & op8_11=1; imm8 & data8_bits47=0 { local addr = &R1 + (imm8 / 8); export *[register]:1 addr; }
+s_bitV: imm8,dest8_11   is dest8_11 & op8_11=2; imm8 & data8_bits47=0 { local addr = &R2 + (imm8 / 8); export *[register]:1 addr; }
+s_bitV: imm8,dest8_11   is dest8_11 & op8_11=3; imm8 & data8_bits47=0 { local addr = &R3 + (imm8 / 8); export *[register]:1 addr; }
+s_bitV: imm8,dest8_11   is dest8_11 & op8_11=4; imm8 & data8_bits47=0 { local addr = &A0 + (imm8 / 8); export *[register]:1 addr; }
+s_bitV: imm8,dest8_11   is dest8_11 & op8_11=5; imm8 & data8_bits47=0 { local addr = &A1 + (imm8 / 8); export *[register]:1 addr; }
+# [A0], [A1]
+s_bitV: [dest8_11]      is dest8_11 & (op8_11=6 | op8_11=7)           { local addr = dest8_11/8; export *[near]:1 addr; }
+# base8[A0], base8[A1]
+s_bitV: imm8[dest8_11]  is dest8_11 & (op8_11=8 | op8_11=9); imm8     { local addr = (dest8_11 + imm8)/8; export *[near]:1 addr; }
+s_bitV: bitNo8, bitBase8[SB] is SB & op8_11=10; bitNo8 & bitBase8     { local addr = SB + bitBase8; export *[near]:1 addr; }
+s_bitV: bitNo8, bitBase8[FB] is FB & op8_11=11; bitNo8 & bitBase8     { local addr = FB + bitBase8; export *[near]:1 addr; }
+# base16[A0], base16[A1]
+s_bitV: imm16[dest8_11] is dest8_11 & (op8_11=12 | op8_11=13); imm16  { local addr = (dest8_11 + imm16)/8; export *[near]:1 addr; }
+s_bitV: bitNo16, bitBase16[SB] is SB & op8_11=14; bitNo16 & bitBase16 { local addr = FB + bitBase16; export *[near]:1 addr; }
+s_bitV: bitNo16, bitBase16     is op8_11=15; bitNo16 & bitBase16      { export *[near]:1 bitBase16; }
+
+# Bit manipulating instructions, bit mask
+# R0, R1, R2, R3, A0, A1
+s_bitB: imm8,dest8_11   is dest8_11 & (op8_11=0 | op8_11=1 | op8_11=2 | op8_11=3 | op8_11=4 | op8_11=5); imm8 & data8_bits47=0 { local mask:1 = 1<<(imm8 & 7); export mask; }
+# [A0], [A1]
+s_bitB: [dest8_11]      is dest8_11 & (op8_11=6 | op8_11=7)           { local mask:1 = 1<<(dest8_11 & 3); export mask; }
+# base8[A0], base8[A1]
+s_bitB: imm8[dest8_11]  is dest8_11 & (op8_11=8 | op8_11=9); imm8     { local mask:1 = 1<<(imm8 & 3); export mask; }
+s_bitB: bitNo8, bitBase8[SB] is SB & op8_11=10; bitNo8 & bitBase8     { local mask:1 = 1<<bitNo8; export mask; }
+s_bitB: bitNo8, bitBase8[FB] is FB & op8_11=11; bitNo8 & bitBase8     { local mask:1 = 1<<bitNo8; export mask; }
+# base16[A0], base16[A1]
+s_bitB: imm16[dest8_11] is dest8_11 & (op8_11=12 | op8_11=13); imm16  { local mask:1 = 1<<(imm16 & 3); export mask; }
+s_bitB: bitNo16, bitBase16[SB] is SB & op8_11=14; bitNo16 & bitBase16 { local mask:1 = 1<<bitNo16; export mask; }
+s_bitB: bitNo16, bitBase16     is op8_11=15; bitNo16 & bitBase16      { local mask:1 = 1<<bitNo16; export mask; }
+
 
 # BMxxx condition
 COND8: "GEU/C"   is cnd8=0x00    { local tmp:1 = Cflg; export tmp; }
@@ -558,176 +597,86 @@ ADJNZ_DEST: addr                 is dsp8 [addr = dsp8 + (inst_start + 2);] {
 	macro_and(SRC2, dest2_2);
 }
 
-#:BAND d_eaw            is (op1_7=0x3f &size0=0 & op12_15=0x4) ... & d_eaw {
-#}
-
-:BCLR dsp8, dest8_11             is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11 & (dest8_11=0 |dest8_11=1 | dest8_11=2 |dest8_11 =3 |dest8_11=4 |dest8_11=5);dsp8 {
-	dest8_11 = dest8_11 & ~(1 << zext(dsp8:1));
+:BAND s_bitV                     is (op0_7=0x7E & op12_15=0x4)... & s_bitV & s_bitB {
+	Cflg = Cflg && (s_bitV & s_bitB);
 }
 
-:BCLR bit, addr                  is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11 & (dest8_11=6 | dest8_11=7) [addr=dest8_11/8; bit=dest8_11-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2 & ~(1 << bit);
+:BCLR s_bitV                     is (op0_7=0x7E & op12_15=0x8)... & s_bitB & s_bitV {
+	s_bitV = s_bitV & ~s_bitB;
 }
-
-:BCLR bit, addr                  is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11 & (dest8_11=8 | dest8_11=9 | dest8_11=10); dsp8 [addr=(dest8_11+dsp8)/8; bit=(dest8_11+dsp8)-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2 & ~(1 << bit);
-}
-
-:BCLR bit, addr[FB]              is FB & op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11=11; dsp8 [addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
-	local tmp:2 = FB+addr;
-	*[near]:1 tmp = *[near]:1 tmp & ~(1 << bit);
-}
-
-:BCLR bit, addr                  is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11 & (dest8_11=12 | dest8_11=13 | dest8_11=14); dsp16 [addr=(dest8_11+dsp16)/8; bit=(dest8_11+dsp16)-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2&~(1 << bit);
-}
-
-:BCLR bit, addr                  is op1_7=0x3f &size0=0 &op12_15=0x8 & dest8_11=15; abs16 [addr=abs16/8; bit=abs16-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2 & ~(1 << bit);
-}
-
 :BCLR bit0_2, SB[dsp8]           is op=0x8 & bit0_2 & SB; dsp8 {
 	local addr:2 = SB + dsp8;
 	*[near]:1 addr = *[near]:1 addr & ~(1 << bit0_2);
 }
 
-
-:BM^COND8 dsp8, dest8_11         is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11 & (dest8_11 = 0 | dest8_11=1 | dest8_11=2 |dest8_11 =3 |dest8_11=4 |dest8_11=5);dsp8; COND8 {
-	macro_bm(COND8:1, dsp8:1, dest8_11);
+:BM^COND8 s_bitV                 is (op0_7=0x7E & op12_15=0x2)... & s_bitV & s_bitB; COND8 {
+	if (COND8) goto <set>;
+		s_bitV = s_bitV & ~s_bitB;
+		goto inst_next;
+	<set>
+		s_bitV = s_bitV | s_bitB;
 }
 
-:BM^COND8 bit, addr              is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11 & (dest8_11=6 | dest8_11=7); COND8 [addr=dest8_11/8; bit=dest8_11-(addr*8);] {
-	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
-}
-
-:BM^COND8 bit, addr              is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11 & (dest8_11=8 | dest8_11=9 | dest8_11=10); dsp8; COND8
-	[addr=(dest8_11+dsp8)/8; bit=(dest8_11+dsp8)-(addr*8);] {
-	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
-}
-
-:BM^COND8  bit, addr[FB]         is FB & op0_7=0x7E & op12_15=0x2 & dest8_11=11; dsp8; COND8
-	[addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
-	local tmp:2 = FB+addr;
-	macro_bm(COND8:1, bit:1, *[near]:1 tmp);
-}
-
-:BM^COND8 bit, addr              is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11 & (dest8_11=12 | dest8_11=13 | dest8_11=14); dsp16; COND8
-	[addr=(dest8_11+dsp16)/8; bit=(dest8_11+dsp16)-(addr*8);] {
-	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
-}
-
-:BM^COND8 bit, addr              is op1_7=0x3F & size0=0 & op12_15=0x2 & dest8_11=15; abs16; COND8
-	[addr=abs16/8; bit=abs16-(addr*8);] {
-	macro_bm(COND8:1, bit:1, *[near]:1 addr:2);
-}
-
-
-:BM^COND4 Cflg          is op1_7=0x3E & size0=1 & op12_15=0xD & COND4 & Cflg {
+:BM^COND4 Cflg                   is op1_7=0x3E & size0=1 & op12_15=0xD & COND4 & Cflg {
 	Cflg = COND4;
 }
 
+:BNAND s_bitV                    is (op0_7=0x7E & op12_15=0x5)... & s_bitV & s_bitB {
+	Cflg = Cflg && ((s_bitV & s_bitB) == 0);
+}
 
-#:BNAND d_eaw           is (op1_7=0x3F & size0=0 & op12_15=0x05) ... & d_eaw {
-#}
-#
-#:BNOR d_eaw            is (op1_7=0x3F & size0=0 & op12_15=0x07) ... & d_eaw {
-#}
-#
-#:BNOT d_eaw            is (op1_7=0x3F & size0=0 & op12_15=0x0A) ... & d_eaw {
-#}
-#
-#:BNOT bit0_2, SB[dsp8] is op=0x0A & bit0_2 & SB; dsp8 {
-#}
-#
-#:BNTST d_eaw           is (op1_7=0x3F & size0=0 & op12_15=0x03) ... & d_eaw {
-#}
-#
-#:BNXOR  d_eaw          is (op1_7=0x3F & size0=0 & op12_15=0x0D) ... & d_eaw {
-#}
-#
-#:BOR d_eaw             is (op1_7=0x3F & size0=0 & op12_15=0x06) ... & d_eaw {
-#}
+:BNOR s_bitV                     is (op0_7=0x7E & op12_15=0x7)... & s_bitV & s_bitB {
+	Cflg = Cflg || ((s_bitV & s_bitB) == 0);
+}
+
+:BNOT s_bitV                     is (op0_7=0x7E & op12_15=0xA)... & s_bitV & s_bitB {
+	if (s_bitV & s_bitB) goto <clr>;
+		s_bitV = s_bitV | s_bitB;
+		goto inst_next;
+	<clr>
+		s_bitV = s_bitV & ~s_bitB;
+}
+:BNOT bit0_2, SB[dsp8]           is op=0x0A & bit0_2 & SB; dsp8 {
+	local addr:2 = SB + dsp8;
+	local mask:1 = (1 << bit0_2);
+	local val:1 = *[near]:1 addr;
+	if (val & mask) goto <clr>;
+		*[near]:1 addr = val | mask;
+		goto inst_next;
+	<clr>
+		*[near]:1 addr = val & ~mask;
+}
+
+:BNTST s_bitV                    is (op0_7=0x7E & op12_15=0x3)... & s_bitV & s_bitB {
+	local tmp = (s_bitV & s_bitB) == 0;
+	Zflg = tmp;
+	Cflg = tmp;
+}
+
+:BNXOR s_bitV                    is (op0_7=0x7E & op12_15=0xD)... & s_bitV & s_bitB {
+	Cflg = Cflg ^ ((s_bitV & s_bitB) == 0);
+}
+
+:BOR s_bitV                      is (op0_7=0x7E & op12_15=0x6)... & s_bitV & s_bitB {
+	Cflg = Cflg || (s_bitV & s_bitB);
+}
 
 :BRK                             is ops0_7=0 {
 }
 
-
-:BSET dsp8, dest8_11             is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11 & (dest8_11=0 | dest8_11=1 | dest8_11=2 |dest8_11=3 |dest8_11=4 |dest8_11=5);dsp8 {
-	dest8_11 = dest8_11 | (1 << zext(dsp8:1));
+:BSET s_bitV                     is (op0_7=0x7E & op12_15=0x9)... & s_bitB & s_bitV {
+	s_bitV = s_bitV | s_bitB;
 }
-
-:BSET bit, addr                  is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11 & (dest8_11=6 | dest8_11=7) [addr=dest8_11/8; bit=dest8_11-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2 | (1 << bit);
-}
-
-:BSET bit, addr                  is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11 & (dest8_11=8 | dest8_11=9 | dest8_11=10); dsp8 [addr=(dest8_11+dsp8)/8; bit=(dest8_11+dsp8)-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2 | (1 << bit);
-}
-
-:BSET bit, addr[FB]              is FB & op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11=11; dsp8 [addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
-	local tmp:2 = FB + addr;
-	*[near]:1 tmp = *[near]:1 tmp | (1 << bit);
-}
-
-:BSET bit, addr                  is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11 & (dest8_11=12 | dest8_11=13 | dest8_11=14); dsp16 [addr=(dest8_11+dsp16)/8; bit=(dest8_11+dsp16)-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2 | (1 << bit);
-}
-
-:BSET bit, addr                  is op1_7=0x3F & size0=0 & op12_15=0x09 & dest8_11=15; abs16 [addr=abs16/8; bit=abs16-(addr*8);] {
-	*[near]:1 addr:2 = *[near]:1 addr:2 | (1 << bit);
-}
-
-:BSET bit0_2, SB[dsp8]           is op=0x09 & bit0_2 &SB; dsp8 {
+:BSET bit0_2, SB[dsp8]           is op=0x09 & bit0_2 & SB; dsp8 {
 	local addr:2 = SB + dsp8;
 	*[near]:1 addr = *[near]:1 addr | (1 << bit0_2);
 }
 
-
-:BTST dsp8, dest8_11             is op0_7=0x7E & op12_15=0x0B & dest8_11 & (dest8_11=0 |dest8_11=1 | dest8_11=2 |dest8_11=3 |dest8_11=4 |dest8_11=5);dsp8 {
-	local newv = dest8_11 & (1 << zext(dsp8:1));
-	Cflg = (newv != 0);
-	Zflg = (newv == 0);
+:BTST s_bitV                     is (op0_7=0x7E & op12_15=0xB)... & s_bitV & s_bitB {
+	local tmp = (s_bitV & s_bitB);
+	Zflg = tmp == 0;
+	Cflg = tmp;
 }
-
-:BTST bit, addr                  is op0_7=0x7E & op12_15=0x0B & dest8_11 & (dest8_11=6 | dest8_11=7) [addr=dest8_11/8; bit=dest8_11-(addr*8);] {
-	local newv = *[near]:1 addr:2 & (1 << bit);
-	Cflg = (newv != 0);
-	Zflg = (newv == 0);
-}
-
-:BTST bit, addr                  is op0_7=0x7E & op12_15=0x0B & dest8_11 & (dest8_11=8 | dest8_11=9 | dest8_11=10); dsp8 [addr=(dest8_11+dsp8)/8; bit=(dest8_11+dsp8)-(addr*8);] {
-	local newv = *[near]:1 addr:2 & (1 << bit);
-	Cflg = (newv != 0);
-	Zflg = (newv == 0);
-}
-
-:BTST bit, addr[FB]              is FB & op0_7=0x7E & op12_15=0x0B & dest8_11=11; dsp8 [addr=((8+dsp8)/8)-1; bit=(addr*8)-dsp8;]{
-	local tmp:2 = FB + addr;
-	local newv = *[near]:1 tmp & (1 << bit);
-	Cflg = (newv != 0);
-	Zflg = (newv == 0);
-}
-
-:BTST bit, addr                  is op0_7=0x7E & op12_15=0x0B & dest8_11 & (dest8_11=12 | dest8_11=13); dsp16 [addr=(dest8_11+dsp16)/8; bit=(dest8_11+dsp16)-(addr*8);] {
-	local newv = *[near]:1 addr:2 & (1 << bit);
-	Cflg = (newv != 0);
-	Zflg = (newv == 0);
-}
-
-:BTST bit, addr                  is op0_7=0x7E & op12_15=0x0B & dest8_11=14; dsp16 [addr=(FB+dsp16)/8; bit=(FB+dsp16)-(addr*8);] {
-	local newv = *[near]:1 addr:2 & (1 << bit);
-	Cflg = (newv != 0);
-	Zflg = (newv == 0);
-}
-
-
-:BTST bit, addr                  is op0_7=0x7E & op12_15=0x0B & dest8_11=15; abs16 [addr=abs16/8; bit=abs16-(addr*8);] {
-	local newv = *[near]:1 addr:2 & (1 << bit);
-	Cflg = (newv != 0);
-	Zflg = (newv == 0);
-}
-
-
 :BTST bit0_2, SB[dsp8]           is op=0x0B & bit0_2 & SB; dsp8 {
 	local addr:2 = SB + dsp8;
 	local newv = *[near]:1 addr & (1 << bit0_2);
@@ -735,15 +684,23 @@ ADJNZ_DEST: addr                 is dsp8 [addr = dsp8 + (inst_start + 2);] {
 	Zflg = (newv == 0);
 }
 
+:BTSTC s_bitV                    is (op0_7=0x7E & op12_15=0x0)... & s_bitB & s_bitV {
+	local tmp = (s_bitV & s_bitB);
+	Zflg = tmp == 0;
+	Cflg = tmp;
+	s_bitV = s_bitV & ~s_bitB;
+}
 
-#:BTSTC d_eaw           is (op1_7=0x3F & size0=0 & op12_15=0x00) ...& d_eaw {
-#}
-#
-#:BTSTS d_eaw           is (op1_7=0x3F & size0=0 & op12_15=0x01) ... & d_eaw {
-#}
-#
-#:BXOR d_eaw            is (op1_7=0x3F & size0=0 & op12_15=0x0C) ...& d_eaw {
-#}
+:BTSTS s_bitV                    is (op0_7=0x7E & op12_15=0x1)... & s_bitB & s_bitV {
+	local tmp = (s_bitV & s_bitB);
+	Zflg = tmp == 0;
+	Cflg = tmp;
+	s_bitV = s_bitV | s_bitB;
+}
+
+:BXOR s_bitV                     is (op0_7=0x7E & op12_15=0xC)... & s_bitB & s_bitV {
+	Cflg = Cflg ^ ((s_bitV & s_bitB) != 0);
+}
 
 :CMP.b u8, d_eab                 is (op1_7=0x3B & size0=0 & op12_15=0x08) ... & d_eab; u8 {
 	macro_cmp(u8, d_eab);
@@ -757,11 +714,9 @@ ADJNZ_DEST: addr                 is dsp8 [addr = dsp8 + (inst_start + 2);] {
 	macro_cmp(imm12_15, d_eab);
 }
 
-
 :CMP.w imm12_15, d_eaw           is (op1_7=0x68 & size0=1 & imm12_15) ... & d_eaw {
 	macro_cmp(imm12_15, d_eaw);
 }
-
    
 :CMP.b imm8_15, d_imm            is (op3_7_imm8=0x1C & imm8_15) ... & d_imm {
 	macro_cmp(imm8_15, d_imm);
