@@ -674,8 +674,8 @@ ADJNZ_DEST: addr                 is dsp8 [addr = dsp8 + (inst_start + 2);] {
 
 :BTST s_bitV                     is (op0_7=0x7E & op12_15=0xB)... & s_bitV & s_bitB {
 	local tmp = (s_bitV & s_bitB);
-	Zflg = tmp == 0;
-	Cflg = tmp;
+	Cflg = (tmp != 0);
+	Zflg = (tmp == 0);
 }
 :BTST bit0_2, SB[dsp8]           is op=0x0B & bit0_2 & SB; dsp8 {
 	local addr:2 = SB + dsp8;
@@ -686,15 +686,15 @@ ADJNZ_DEST: addr                 is dsp8 [addr = dsp8 + (inst_start + 2);] {
 
 :BTSTC s_bitV                    is (op0_7=0x7E & op12_15=0x0)... & s_bitB & s_bitV {
 	local tmp = (s_bitV & s_bitB);
-	Zflg = tmp == 0;
-	Cflg = tmp;
+	Cflg = (tmp != 0);
+	Zflg = (tmp == 0);
 	s_bitV = s_bitV & ~s_bitB;
 }
 
 :BTSTS s_bitV                    is (op0_7=0x7E & op12_15=0x1)... & s_bitB & s_bitV {
 	local tmp = (s_bitV & s_bitB);
-	Zflg = tmp == 0;
-	Cflg = tmp;
+	Cflg = (tmp != 0);
+	Zflg = (tmp == 0);
 	s_bitV = s_bitV | s_bitB;
 }
 
